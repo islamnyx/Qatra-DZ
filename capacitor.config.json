@@ -1,0 +1,8 @@
+{
+  "appId": "dz.cra.qatra",
+  "appName": "Qatra",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

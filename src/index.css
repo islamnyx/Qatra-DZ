@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background-color: #fff;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes splash-bg-pulse {
+  0%, 100% { background-color: #b91c1c; }
+  50% { background-color: #dc2626; }
+}
+
+@keyframes splash-drop-in {
+  0% { opacity: 0; transform: scale(0) translateY(-40px); }
+  50% { transform: scale(1.15) translateY(0); }
+  70% { transform: scale(0.95) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes splash-title-in {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes splash-drip {
+  0% { opacity: 0.9; transform: translateY(0) scaleY(1); }
+  100% { opacity: 0; transform: translateY(72px) scaleY(1.4); }
+}
+
+@keyframes splash-drip-2 {
+  0% { opacity: 0.7; transform: translateY(0) scaleY(1); }
+  100% { opacity: 0; transform: translateY(56px) scaleY(1.2); }
+}
+
+@keyframes splash-ring {
+  0% { opacity: 0.6; transform: scale(0.8); }
+  100% { opacity: 0; transform: scale(2.2); }
+}
+
+@keyframes splash-exit {
+  0% { opacity: 1; transform: scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: scale(1.35); filter: blur(8px); }
+}
+
+.splash-screen { animation: splash-bg-pulse 2s ease-in-out infinite; }
+.splash-drop { animation: splash-drop-in 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.splash-title { animation: splash-title-in 0.6s ease-out 0.5s both; }
+.splash-drip-1 { animation: splash-drip 0.9s ease-in 0.6s infinite; }
+.splash-drip-2 { animation: splash-drip-2 0.75s ease-in 0.85s infinite; }
+.splash-drip-3 { animation: splash-drip 1s ease-in 1s infinite; }
+.splash-ring { animation: splash-ring 1.2s ease-out infinite; }
+.splash-exit { animation: splash-exit 0.65s cubic-bezier(0.4, 0, 1, 1) forwards; }
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes success-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-fade-in-up { animation: fade-in-up 0.45s ease-out both; }
+.animate-scale-in { animation: scale-in 0.35s ease-out both; }
+.animate-success-pop { animation: success-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+
+.sos-glow {
+  animation: sos-pulse-ring 2s ease-out infinite;
+}
+
+@keyframes sos-pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+  70% { box-shadow: 0 0 0 12px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+.shimmer-bar {
+  background: linear-gradient(90deg, #fee2e2 0%, #fecaca 50%, #fee2e2 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
