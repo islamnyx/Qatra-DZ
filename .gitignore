@@ -19,3 +19,4 @@ android/local.properties
 .idea/
 .vscode/
 *.iml
+__pycache__/
