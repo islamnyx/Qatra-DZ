@@ -23,3 +23,4 @@ server/data/*.db-*
 .idea/
 .vscode/
 *.iml
+__pycache__/
