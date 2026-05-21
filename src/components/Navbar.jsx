@@ -2,7 +2,7 @@ import { Bell, Droplet } from "lucide-react";
 import LanguageToggle from "./LanguageToggle";
 import { useLanguage } from "../context/LanguageContext";
 
-export default function Navbar() {
+export default function Navbar({ apiOnline }) {
   const { t } = useLanguage();
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b border-red-100 bg-white sticky top-0 z-10">
@@ -12,7 +12,14 @@ export default function Navbar() {
         </div>
         <div>
           <h1 className="text-base font-bold text-red-700 leading-tight">{t("appName")}</h1>
-          <p className="text-xs text-gray-500">{t("appSubtitle")}</p>
+          <p className="text-xs text-gray-500">
+            {t("appSubtitle")}
+            {apiOnline !== undefined && (
+              <span className={`ms-1 ${apiOnline ? "text-green-600" : "text-amber-600"}`}>
+                · {apiOnline ? "API" : "offline"}
+              </span>
+            )}
+          </p>
         </div>
       </div>
       <div className="flex items-center gap-2">

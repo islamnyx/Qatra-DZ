@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BottomNav from "../components/BottomNav";
 import LanguageToggle from "../components/LanguageToggle";
-import { newsFeed } from "../mockData";
+import { newsFeed as mockFeed } from "../mockData";
 import { useLanguage } from "../context/LanguageContext";
-import { useApp } from "../context/AppContext";
+import { data } from "../services/data/index.js";
 import { Newspaper, Users, Calendar } from "lucide-react";
 
 const tagStyles = {
@@ -14,8 +14,47 @@ const tagStyles = {
 
 export default function Feed() {
   const { t, lang } = useLanguage();
-  const { campaignInterest, registerCampaignInterest } = useApp();
-  const [joined, setJoined] = useState(false);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadFeed = () => {
+    setLoading(true);
+    data
+      .getFeed()
+      .then(setItems)
+      .catch(() => setItems(mockFeed.map((i) => ({ ...i, donorRegistered: false, campaignInterest: 487 }))))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadFeed();
+  }, []);
+
+  const handleRegister = async (item) => {
+    if (item.donorRegistered) return;
+    try {
+      const result = await data.registerCampaign(item.id);
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === item.id
+            ? {
+                ...i,
+                donorRegistered: true,
+                campaignInterest: result.campaignInterest ?? i.campaignInterest + 1,
+              }
+            : i
+        )
+      );
+    } catch {
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === item.id
+            ? { ...i, donorRegistered: true, campaignInterest: (i.campaignInterest || 487) + 1 }
+            : i
+        )
+      );
+    }
+  };
 
   return (
     <div className="mx-auto min-h-screen max-w-sm bg-red-50 pb-24">
@@ -32,14 +71,18 @@ export default function Feed() {
         </div>
       </header>
       <main className="px-4 py-4 space-y-3">
-        {newsFeed.map((item) => (
+        {loading && <p className="text-center text-sm text-gray-500">...</p>}
+        {items.map((item) => (
           <article key={item.id} className={`rounded-2xl border bg-white p-4 ${item.isCampaign ? "border-red-300" : "border-red-100"}`}>
             {item.isCampaign && (
               <div className="flex items-center gap-2 mb-3 rounded-xl bg-red-600 px-3 py-2 text-white">
                 <Calendar className="h-4 w-4" />
                 <div>
                   <p className="text-xs font-bold">{t("campaignDays")}</p>
-                  <p className="text-xs flex items-center gap-1"><Users className="h-3 w-3" />{campaignInterest} {t("peopleInterested")}</p>
+                  <p className="text-xs flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {item.campaignInterest} {t("peopleInterested")}
+                  </p>
                 </div>
               </div>
             )}
@@ -50,8 +93,17 @@ export default function Feed() {
             <h2 className="font-bold text-sm mb-1">{lang === "fr" && item.titleFr ? item.titleFr : item.title}</h2>
             <p className="text-sm text-gray-500 mb-3">{lang === "fr" && item.descriptionFr ? item.descriptionFr : item.description}</p>
             {item.isCampaign && (
-              <button type="button" onClick={() => { if (!joined) { registerCampaignInterest(); setJoined(true); } }} disabled={joined} className={`w-full rounded-xl py-2.5 text-sm font-bold ${joined ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-600 text-white"}`}>
-                {joined ? `✓ ${t("interested")}` : t("registerInterest")}
+              <button
+                type="button"
+                onClick={() => handleRegister(item)}
+                disabled={item.donorRegistered}
+                className={`w-full rounded-xl py-2.5 text-sm font-bold ${
+                  item.donorRegistered
+                    ? "bg-green-100 text-green-700 border border-green-200"
+                    : "bg-red-600 text-white"
+                }`}
+              >
+                {item.donorRegistered ? `✓ ${t("interested")}` : t("registerInterest")}
               </button>
             )}
           </article>

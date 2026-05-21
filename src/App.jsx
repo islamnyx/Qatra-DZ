@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { AppProvider } from "./context/AppContext";
+import { DonorProvider } from "./context/DonorContext";
 import SplashScreen from "./components/SplashScreen";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
-import Map from "./pages/Map";
-import Chat from "./pages/Chat";
+import Map from "./features/map";
+import Chat from "./features/chat";
 import Feed from "./pages/Feed";
 import FamilyVault from "./pages/FamilyVault";
 import Passport from "./pages/Passport";
@@ -46,9 +47,11 @@ function AppShell() {
 export default function App() {
   return (
     <LanguageProvider>
-      <AppProvider>
-        <AppShell />
-      </AppProvider>
+      <DonorProvider>
+        <AppProvider>
+          <AppShell />
+        </AppProvider>
+      </DonorProvider>
     </LanguageProvider>
   );
 }

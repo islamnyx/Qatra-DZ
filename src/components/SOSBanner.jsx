@@ -4,7 +4,7 @@ import { formatTimeAgo } from "../mockData";
 import { useLanguage } from "../context/LanguageContext";
 import { Share2 } from "lucide-react";
 
-export default function SOSBanner({ request, matchScore, onRespond, onShare, responded }) {
+export default function SOSBanner({ request, matchScore, onRespond, onShare, responded, timeAgo }) {
   const { t } = useLanguage();
   if (!request) return null;
 
@@ -22,7 +22,7 @@ export default function SOSBanner({ request, matchScore, onRespond, onShare, res
           <p className="text-sm text-red-100 mb-1">{t("bloodNeeded")}</p>
           <BloodTypeBadge type={request.bloodType} />
         </div>
-        <span className="text-xs text-red-100">{formatTimeAgo(request.postedAt)}</span>
+        <span className="text-xs text-red-100">{timeAgo ?? formatTimeAgo(request.postedAt)}</span>
       </div>
       <p className="font-semibold text-sm mb-0.5">{request.hospital}</p>
       <p className="text-xs text-red-100 mb-4">{request.wilaya}</p>

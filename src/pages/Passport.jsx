@@ -1,14 +1,35 @@
+import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import BottomNav from "../components/BottomNav";
 import BackHeader from "../components/BackHeader";
 import BloodTypeBadge from "../components/BloodTypeBadge";
-import { donor, getPassportPayload } from "../mockData";
+import { getPassportPayload } from "../mockData";
 import { useLanguage } from "../context/LanguageContext";
+import { useDonor } from "../context/DonorContext";
+import { data } from "../services/data/index.js";
 import { ShieldCheck, ScanLine, Calendar, MapPin } from "lucide-react";
 
 export default function Passport() {
   const { t, lang } = useLanguage();
-  const payload = getPassportPayload();
+  const { donor, loading: donorLoading } = useDonor();
+  const [payload, setPayload] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    data
+      .getPassport()
+      .then(setPayload)
+      .catch(() => setPayload(getPassportPayload()))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (donorLoading || loading || !donor || !payload) {
+    return (
+      <div className="mx-auto min-h-screen max-w-sm bg-red-50 flex items-center justify-center">
+        <p className="text-red-600 font-semibold">...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto min-h-screen max-w-sm bg-red-50 pb-24">

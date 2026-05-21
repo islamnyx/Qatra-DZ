@@ -15,6 +15,10 @@ android/local.properties
 *.apk
 *.aab
 
+# Backend database (recreated on first run)
+server/data/*.db
+server/data/*.db-*
+
 # IDE
 .idea/
 .vscode/

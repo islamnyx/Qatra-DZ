@@ -1,32 +1,34 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
+import { data } from "../services/data/index.js";
+import { DEMO_DONOR_ID } from "../config/env.js";
 
 const AppContext = createContext(null);
-const CAMPAIGN_KEY = "qatra_campaign_interest";
 
 export function AppProvider({ children }) {
   const [respondedIds, setRespondedIds] = useState([]);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [campaignInterest, setCampaignInterest] = useState(487);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(CAMPAIGN_KEY);
-    if (saved) setCampaignInterest(Number(saved));
-  }, []);
 
   const markResponded = (id) => {
     setRespondedIds((prev) => [...new Set([...prev, id])]);
     setShowSuccess(true);
   };
 
-  const clearSuccess = () => setShowSuccess(false);
-
-  const registerCampaignInterest = () => {
-    setCampaignInterest((n) => {
-      const next = n + 1;
-      localStorage.setItem(CAMPAIGN_KEY, String(next));
-      return next;
-    });
+  const respondToSos = async (sosId, eta) => {
+    try {
+      await data.respondToSos(sosId, { donorId: DEMO_DONOR_ID, eta });
+      markResponded(sosId);
+      return { ok: true };
+    } catch (err) {
+      if (err.code === "ALREADY_RESPONDED") {
+        markResponded(sosId);
+        return { ok: true, already: true };
+      }
+      markResponded(sosId);
+      return { ok: true, offline: true };
+    }
   };
+
+  const clearSuccess = () => setShowSuccess(false);
 
   const hasResponded = (id) => respondedIds.includes(id);
 
@@ -34,11 +36,10 @@ export function AppProvider({ children }) {
     <AppContext.Provider
       value={{
         markResponded,
+        respondToSos,
         hasResponded,
         showSuccess,
         clearSuccess,
-        campaignInterest,
-        registerCampaignInterest,
       }}
     >
       {children}

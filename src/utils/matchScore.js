@@ -1,7 +1,5 @@
-import { donor } from "../mockData";
-
-export function calculateMatchScore(request) {
-  if (!request) return 0;
+export function calculateMatchScore(request, donor) {
+  if (!request || !donor) return 0;
   let score = 40;
   if (request.bloodType === donor.bloodType) score += 35;
   else if (request.bloodType.replace("-", "+") === donor.bloodType.replace("-", "+"))

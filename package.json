@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "npm run dev --prefix server",
     "build": "vite build",
     "preview": "vite preview",
     "cap:sync": "npm run build && npx cap sync",
     "cap:android": "npx cap open android"
   },
   "dependencies": {
+    "firebase": "^11.8.0",
     "lucide-react": "^0.511.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.0",

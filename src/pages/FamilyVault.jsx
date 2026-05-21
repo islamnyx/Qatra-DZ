@@ -1,21 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BottomNav from "../components/BottomNav";
 import BackHeader from "../components/BackHeader";
 import BloodTypeBadge from "../components/BloodTypeBadge";
-import { familyMembers } from "../mockData";
+import { familyMembers as mockFamily } from "../mockData";
 import { useLanguage } from "../context/LanguageContext";
+import { data } from "../services/data/index.js";
 import { Users, Shield, Bell, UserPlus, Check } from "lucide-react";
 
 export default function FamilyVault() {
   const { t, lang } = useLanguage();
+  const [members, setMembers] = useState([]);
   const [circleOn, setCircleOn] = useState(true);
   const [alertDemo, setAlertDemo] = useState(false);
   const [toast, setToast] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const runDemoAlert = () => {
+  const loadFamily = () => {
+    setLoading(true);
+    api
+      .getFamily()
+      .then((data) => {
+        setMembers(data.members);
+        setCircleOn(data.circleActive);
+      })
+      .catch(() => {
+        setMembers(mockFamily);
+        setCircleOn(true);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadFamily();
+  }, []);
+
+  const toggleCircle = async () => {
+    const next = !circleOn;
+    setCircleOn(next);
+    try {
+      await data.setFamilyCircle(next);
+    } catch {
+      /* keep local state */
+    }
+  };
+
+  const runDemoAlert = async () => {
     setAlertDemo(true);
-    setToast(t("demoAlertDone"));
-    setTimeout(() => { setAlertDemo(false); setToast(""); }, 3000);
+    try {
+      await data.demoFamilyAlert();
+      setToast(t("demoAlertDone"));
+    } catch {
+      setToast(t("demoAlertDone"));
+    }
+    setTimeout(() => {
+      setAlertDemo(false);
+      setToast("");
+    }, 3000);
   };
 
   return (
@@ -39,12 +79,13 @@ export default function FamilyVault() {
             <Users className="h-5 w-5 text-red-600" />
             <span className="text-sm font-semibold">{t("circleActive")}</span>
           </div>
-          <button type="button" onClick={() => setCircleOn(!circleOn)} className={`relative h-7 w-12 rounded-full ${circleOn ? "bg-red-600" : "bg-gray-200"}`}>
+          <button type="button" onClick={toggleCircle} className={`relative h-7 w-12 rounded-full ${circleOn ? "bg-red-600" : "bg-gray-200"}`}>
             <span className={`absolute top-0.5 start-0.5 h-6 w-6 rounded-full bg-white transition-transform ${circleOn ? "translate-x-5" : ""}`} />
           </button>
         </section>
+        {loading && <p className="text-center text-sm text-gray-500">...</p>}
         <ul className="space-y-2">
-          {familyMembers.map((member) => (
+          {members.map((member) => (
             <li key={member.id} className={`rounded-2xl border border-red-100 bg-white p-4 flex items-center gap-3 ${alertDemo ? "ring-2 ring-red-300" : ""}`}>
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-700">{member.alertOrder}</span>
               <div className="flex-1 min-w-0">

@@ -5,8 +5,8 @@ import BadgeCard from "../components/BadgeCard";
 import FeatureLinkCard from "../components/FeatureLinkCard";
 import LanguageToggle from "../components/LanguageToggle";
 import { Link } from "react-router-dom";
-import { donor, donationHistory, badgeDetails } from "../mockData";
 import { useLanguage } from "../context/LanguageContext";
+import { useDonor } from "../context/DonorContext";
 import { Calendar, Trophy, TrendingUp, Users, QrCode } from "lucide-react";
 
 function getInitials(name) {
@@ -15,6 +15,16 @@ function getInitials(name) {
 
 export default function Profile() {
   const { t } = useLanguage();
+  const { donor, donationHistory, badgeDetails, loading } = useDonor();
+
+  if (loading || !donor) {
+    return (
+      <div className="mx-auto min-h-screen max-w-sm bg-red-50 flex items-center justify-center">
+        <p className="text-red-600 font-semibold">...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto min-h-screen max-w-sm bg-red-50 pb-24">
       <header className="border-b border-red-100 bg-white px-4 py-4 sticky top-0 z-10">
