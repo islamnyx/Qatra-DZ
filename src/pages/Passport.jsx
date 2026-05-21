@@ -23,6 +23,16 @@ export default function Passport() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (donor?.isEligible) {
+      try {
+        sessionStorage.setItem("qatra_passport_viewed", "1");
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [donor?.isEligible]);
+
   if (donorLoading || loading || !donor || !payload) {
     return (
       <div className="mx-auto min-h-screen max-w-sm bg-red-50 flex items-center justify-center">

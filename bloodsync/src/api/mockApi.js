@@ -85,8 +85,34 @@ export const mockApi = {
     return seasonalFactors;
   },
 
-  async broadcastAlert() {
+  async broadcastAlert(payload = {}) {
     await delay(400);
-    return { ok: true, message: "Donor alert broadcast (simulated)" };
+    return {
+      ok: true,
+      message: "Donor alert broadcast (simulated)",
+      reached: payload.estimatedReach ?? 0,
+    };
+  },
+
+  async createDrive(drive) {
+    await delay(350);
+    return { ok: true, drive: { ...drive, id: "md-new-" + Date.now() } };
+  },
+
+  async requestTransfer({ fromHospitalId, toHospitalId, bloodType, units }) {
+    await delay(300);
+    const from = hospitals.find((h) => h.id === fromHospitalId);
+    const to = hospitals.find((h) => h.id === toHospitalId);
+    return {
+      ok: true,
+      transfer: {
+        id: "T-" + Date.now(),
+        from: from?.name,
+        to: to?.name,
+        type: bloodType,
+        units,
+        status: "Pending",
+      },
+    };
   },
 };
