@@ -1,0 +1,51 @@
+{
+  "blood_inventory": [
+    {
+      "id": "UNIT-h1-O--001",
+      "data": {
+        "hospital_id": "h1",
+        "hospital_name": "CHU Mustapha Pacha",
+        "wilaya": "Alger",
+        "blood_type": "O-",
+        "component_type": "RBC",
+        "donation_date": "2026-04-10",
+        "expiration_date": "2026-05-22",
+        "status": "available",
+        "created_at": "2026-05-21T00:00:00.000Z",
+        "updated_at": "2026-05-21T00:00:00.000Z"
+      }
+    },
+    {
+      "id": "UNIT-h1-A+-002",
+      "data": {
+        "hospital_id": "h1",
+        "hospital_name": "CHU Mustapha Pacha",
+        "wilaya": "Alger",
+        "blood_type": "A+",
+        "component_type": "Platelets",
+        "donation_date": "2026-05-18",
+        "expiration_date": "2026-05-23",
+        "status": "available",
+        "created_at": "2026-05-21T00:00:00.000Z",
+        "updated_at": "2026-05-21T00:00:00.000Z"
+      }
+    }
+  ],
+  "blood_requests": [
+    {
+      "id": "REQ-h1-001",
+      "data": {
+        "hospital_id": "h1",
+        "hospital_name": "CHU Mustapha Pacha",
+        "wilaya": "Alger",
+        "required_blood_type": "O-",
+        "required_component": "RBC",
+        "quantity_needed": 4,
+        "urgency_level": "CRITICAL",
+        "status": "pending",
+        "created_at": "2026-05-21T10:00:00.000Z",
+        "updated_at": "2026-05-21T10:00:00.000Z"
+      }
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "blood_inventory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "hospital_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "expiration_date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blood_inventory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "hospital_id", "order": "ASCENDING" },
+        { "fieldPath": "blood_type", "order": "ASCENDING" },
+        { "fieldPath": "component_type", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blood_inventory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "expiration_date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blood_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "urgency_level", "order": "DESCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blood_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "hospital_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

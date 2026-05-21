@@ -1,33 +1,22 @@
-/**
- * TODO (Firebase team): implement sign-in (phone, email, or anonymous).
- *
- * Example:
- *   import { signInAnonymously } from "firebase/auth";
- *   import { getFirebaseAuth } from "../init.js";
- */
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { getFirebaseAuth } from "../init.js";
 
-export function useAuth() {
+export function useFirebaseAuth() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let unsubscribe = () => {};
-    (async () => {
-      const { getFirebaseAuth } = await import("../init.js");
-      const auth = await getFirebaseAuth();
-      if (!auth) {
-        setLoading(false);
-        return;
-      }
-      const { onAuthStateChanged } = await import("firebase/auth");
-      unsubscribe = onAuthStateChanged(auth, (u) => {
-        setUser(u);
-        setLoading(false);
-      });
-    })();
-    return () => unsubscribe();
+    const auth = getFirebaseAuth();
+    if (!auth) {
+      setLoading(false);
+      return undefined;
+    }
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
   }, []);
 
-  return { user, loading, isSignedIn: Boolean(user) };
+  return { user, loading };
 }
