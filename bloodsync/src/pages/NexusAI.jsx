@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   LineChart,
   Line,
@@ -8,7 +8,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { mockApi } from "../api/mockApi";
+import { dataApi } from "../api/dataApi";
 
 const TABS = ["Transfer Optimizer", "Shortage Alerts", "Expiry Prevention", "Demand Forecast"];
 
@@ -19,14 +19,67 @@ export default function NexusAI() {
   const [expiring, setExpiring] = useState([]);
   const [seasonal, setSeasonal] = useState([]);
   const [forecastData, setForecastData] = useState([]);
+  const [forecastContext, setForecastContext] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [apiLive, setApiLive] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    let live = false;
+    try {
+      await dataApi.health();
+      live = true;
+    } catch {
+      live = false;
+    }
+    setApiLive(live);
+
+    const [r, s, e, f, sf] = await Promise.all([
+      dataApi.getRecommendations(),
+      dataApi.getShortages(),
+      dataApi.getExpiring(72),
+      dataApi.getForecast("h1"),
+      dataApi.getSeasonalFactors(),
+    ]);
+
+    setRecs(r);
+    setShortages(s);
+    setExpiring(e);
+    setForecastData(f.days ?? f);
+    setForecastContext(f.context ?? "");
+    setSeasonal(sf);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    mockApi.getRecommendations().then(setRecs);
-    mockApi.getShortages().then(setShortages);
-    mockApi.getExpiring(72).then(setExpiring);
-    mockApi.getSeasonalFactors().then(setSeasonal);
-    mockApi.getForecast("h1").then((f) => setForecastData(f.days));
-  }, []);
+    loadAll();
+  }, [loadAll]);
+
+  const handleApproveAll = async () => {
+    const critical = recs.filter((rec) => rec.urgency >= 80 && rec.action === "Transfer");
+    for (const rec of critical.slice(0, 3)) {
+      await dataApi.approveRecommendation(rec);
+    }
+    showToast(`Approved ${Math.min(critical.length, 3)} critical transfer(s)`);
+    loadAll();
+  };
+
+  const handleApproveOne = async (rec) => {
+    await dataApi.approveRecommendation(rec);
+    showToast(`Transfer approved: ${rec.bloodType} ${rec.fromWilaya} → ${rec.toWilaya}`);
+    loadAll();
+  };
+
+  const handleBroadcast = async (row) => {
+    const res = await dataApi.broadcastAlert({ wilaya: row.wilaya, types: row.types });
+    showToast(res.message ?? "Alert broadcast");
+  };
 
   const expiryClass = (h) => {
     if (h < 24) return "bg-primary-light";
@@ -34,57 +87,97 @@ export default function NexusAI() {
     return "bg-yellow-50";
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-sm text-gray-500">
+        Loading Nexus AI…
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 border-b border-border pb-2">
-        {TABS.map((label, i) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => setTab(i)}
-            className={`rounded-[10px] px-4 py-2 text-sm font-medium ${
-              tab === i ? "bg-primary text-white" : "text-gray-600 hover:bg-surface"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2 border-b border-border pb-2 flex-1">
+          {TABS.map((label, i) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => setTab(i)}
+              className={`rounded-[10px] px-4 py-2 text-sm font-medium ${
+                tab === i ? "bg-primary text-white" : "text-gray-600 hover:bg-surface"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <span
+          className={`text-xs font-medium px-2 py-1 rounded-full ${
+            apiLive ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"
+          }`}
+        >
+          {apiLive ? "Live API" : "Offline mock"}
+        </span>
       </div>
+
+      {toast && (
+        <div className="rounded-[10px] bg-primary-light border border-primary/20 px-4 py-2 text-sm text-primary">
+          {toast}
+        </div>
+      )}
 
       {tab === 0 && (
         <div className="space-y-4">
-          <button type="button" className="btn-primary px-4 py-2 text-sm">
+          <button type="button" onClick={handleApproveAll} className="btn-primary px-4 py-2 text-sm">
             Approve all critical transfers
           </button>
-          {recs.map((rec) => (
-            <div key={rec.id} className="card p-5">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary">{rec.action}</span>
-                  <p className="mt-2 text-base font-medium">{rec.title}</p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    <span className="font-medium">{rec.fromWilaya}</span> →→→ <span className="font-medium">{rec.toWilaya}</span>
-                  </p>
-                  <p className="mt-2 text-xs">
-                    <span className="rounded-full border border-border px-2 py-0.5 font-medium">{rec.bloodType}</span> · {rec.units} units · {rec.distanceKm} km
-                    {rec.expiryHours && ` · Expires ${rec.expiryHours}h`}
-                  </p>
-                </div>
-                <div className="w-32">
-                  <p className="mb-1 text-xs text-gray-500">Urgency</p>
-                  <div className="h-2 rounded-full bg-border overflow-hidden">
-                    <div className="h-full bg-primary rounded-full" style={{ width: `${rec.urgency}%` }} />
+          {recs.length === 0 ? (
+            <p className="text-sm text-gray-500">No transfer recommendations — inventory balanced.</p>
+          ) : (
+            recs.map((rec) => (
+              <div key={rec.id} className="card p-5">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary">
+                      {rec.action}
+                    </span>
+                    <p className="mt-2 text-base font-medium">{rec.title}</p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      <span className="font-medium">{rec.fromWilaya}</span> →→→{" "}
+                      <span className="font-medium">{rec.toWilaya}</span>
+                    </p>
+                    <p className="mt-2 text-xs">
+                      <span className="rounded-full border border-border px-2 py-0.5 font-medium">
+                        {rec.bloodType}
+                      </span>{" "}
+                      · {rec.units} units · {rec.distanceKm} km
+                      {rec.expiryHours && ` · Expires ${rec.expiryHours}h`}
+                    </p>
                   </div>
-                  <p className="mt-1 text-right text-xs font-medium">{rec.urgency}/100</p>
+                  <div className="w-32">
+                    <p className="mb-1 text-xs text-gray-500">Urgency</p>
+                    <div className="h-2 rounded-full bg-border overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${rec.urgency}%` }} />
+                    </div>
+                    <p className="mt-1 text-right text-xs font-medium">{rec.urgency}/100</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleApproveOne(rec)}
+                    className="btn-primary px-4 py-2 text-xs"
+                  >
+                    Accept Transfer
+                  </button>
+                  <button type="button" className="rounded-[10px] border border-border px-4 py-2 text-xs">
+                    Dismiss
+                  </button>
                 </div>
               </div>
-              <div className="mt-4 flex gap-2">
-                <button type="button" className="btn-primary px-4 py-2 text-xs">Accept Transfer</button>
-                <button type="button" className="rounded-[10px] border border-border px-4 py-2 text-xs">Dismiss</button>
-                <button type="button" className="rounded-[10px] border border-border px-4 py-2 text-xs">Details</button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
 
@@ -102,16 +195,33 @@ export default function NexusAI() {
             </thead>
             <tbody>
               {shortages.map((row, i) => (
-                <tr key={i} className={`border-t border-border ${row.daysUntilEmpty < 1 ? "bg-primary-light" : ""}`}>
+                <tr
+                  key={i}
+                  className={`border-t border-border ${row.daysUntilEmpty < 1 ? "bg-primary-light" : ""}`}
+                >
                   <td className="p-3 font-medium">{row.hospital}</td>
                   <td className="p-3">{row.wilaya}</td>
                   <td className="p-3">{row.types.join(", ")}</td>
-                  <td className="p-3 font-medium text-danger">{row.daysUntilEmpty}d</td>
+                  <td className="p-3 font-medium text-danger">{row.daysUntilEmpty.toFixed(1)}d</td>
                   <td className="p-3">
-                    <button type="button" onClick={() => mockApi.broadcastAlert()} className="mr-2 text-xs text-primary font-medium">
+                    <button
+                      type="button"
+                      onClick={() => handleBroadcast(row)}
+                      className="mr-2 text-xs text-primary font-medium"
+                    >
                       Broadcast alert
                     </button>
-                    <button type="button" className="text-xs text-gray-600">Emergency transfer</button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        dataApi.coordinateTransfer?.(row.types[0], "Oran", row.wilaya).then(() =>
+                          showToast("Emergency transfer requested")
+                        )
+                      }
+                      className="text-xs text-gray-600"
+                    >
+                      Emergency transfer
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -122,12 +232,14 @@ export default function NexusAI() {
 
       {tab === 2 && (
         <div className="space-y-3">
-          <button type="button" className="btn-primary px-4 py-2 text-sm">Approve selected transfers</button>
+          <p className="text-xs text-gray-500">Units expiring within 72h — synced from Qatra inventory DB</p>
           <div className="card overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-surface text-xs text-gray-500">
                 <tr>
-                  <th className="p-3 w-8"><input type="checkbox" /></th>
+                  <th className="p-3 w-8">
+                    <input type="checkbox" readOnly />
+                  </th>
                   <th className="p-3 text-left">Hospital</th>
                   <th className="p-3">Type</th>
                   <th className="p-3">Units</th>
@@ -138,7 +250,9 @@ export default function NexusAI() {
               <tbody>
                 {expiring.map((row, i) => (
                   <tr key={i} className={`border-t border-border ${expiryClass(row.hoursRemaining)}`}>
-                    <td className="p-3"><input type="checkbox" /></td>
+                    <td className="p-3">
+                      <input type="checkbox" />
+                    </td>
                     <td className="p-3">{row.hospital}</td>
                     <td className="p-3 font-medium">{row.type}</td>
                     <td className="p-3">{row.units}</td>
@@ -155,7 +269,8 @@ export default function NexusAI() {
       {tab === 3 && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="card lg:col-span-2 p-5">
-            <h3 className="mb-4 text-sm font-medium">30-day demand forecast</h3>
+            <h3 className="mb-1 text-sm font-medium">7-day demand forecast</h3>
+            {forecastContext && <p className="mb-3 text-xs text-gray-500">{forecastContext}</p>}
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={forecastData}>
@@ -169,7 +284,11 @@ export default function NexusAI() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <button type="button" onClick={() => window.print()} className="mt-4 rounded-[10px] border border-border px-4 py-2 text-sm">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="mt-4 rounded-[10px] border border-border px-4 py-2 text-sm"
+            >
               Export PDF (print)
             </button>
           </div>
@@ -184,7 +303,7 @@ export default function NexusAI() {
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-[10px] text-gray-400">Admin: edit via PUT /api/seasonal-factors (backend)</p>
+            <p className="mt-3 text-[10px] text-gray-400">Source: GET /api/nexus/seasonal-factors</p>
           </div>
         </div>
       )}

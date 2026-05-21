@@ -1,23 +1,64 @@
 /**
- * Chat team: change UI in ChatPage.jsx; change reply logic here or via Firebase adapter.
+ * Conversational DamBot — sends message + history for real multi-turn chat.
  */
-import { data } from "../../../services/data/index.js";
-import { getDamBotReply, quickPrompts } from "../utils/damBot.js";
+import { api } from "../../../api/client.js";
+import { getApiBase } from "../../../config/env.js";
 
-export async function fetchPrompts(lang) {
+const OFFLINE_MSG = {
+  ar: "⚠️ الخادم غير متصل. شغّل: cd server ثم npm start — ثم أعد تحميل الصفحة.",
+  fr: "⚠️ Serveur hors ligne. Lancez: cd server puis npm start.",
+  en: "⚠️ API offline. Run: cd server && npm start.",
+};
+
+export async function fetchWelcome(lang, donorId) {
   try {
-    const res = await data.getChatPrompts(lang);
-    return res.prompts;
+    return await api.getChatWelcome(lang, donorId);
   } catch {
-    return quickPrompts[lang] ?? quickPrompts.ar;
+    const name = lang === "fr" ? "" : "";
+    return {
+      text:
+        lang === "fr"
+          ? "Bonjour ! 🩸 Posez votre question librement."
+          : "مرحباً! 🩸 اكتب سؤالك بحرية — محادثة حقيقية.",
+      suggestions:
+        lang === "fr"
+          ? ["Suis-je éligible ?", "Où donner ?", "Guide app"]
+          : ["هل أنا مؤهل؟", "أين أتبرع؟", "كيف أستخدم التطبيق؟"],
+    };
   }
 }
 
-export async function sendChatMessage(text, lang, donor) {
+export async function sendChatMessage(text, lang, donor, apiOnline, history = []) {
+  if (!apiOnline) {
+    return {
+      reply: OFFLINE_MSG[lang] ?? OFFLINE_MSG.ar,
+      suggestions: [],
+      intent: "offline",
+    };
+  }
+
   try {
-    const res = await data.sendChat(text, lang, donor?.id);
-    return res.reply;
-  } catch {
-    return getDamBotReply(text, lang, donor);
+    const res = await api.sendChat(
+      text,
+      lang,
+      donor?.id ?? "DZ-001",
+      history.map((m) => ({
+        role: m.role === "bot" ? "assistant" : "user",
+        content: m.text,
+        intent: m.intent,
+      }))
+    );
+    return {
+      reply: res.reply,
+      suggestions: res.suggestions ?? [],
+      intent: res.intent,
+    };
+  } catch (err) {
+    console.warn("[DamBot]", err.message, getApiBase());
+    return {
+      reply: (OFFLINE_MSG[lang] ?? OFFLINE_MSG.ar) + `\n(${getApiBase()})`,
+      suggestions: [],
+      intent: "error",
+    };
   }
 }

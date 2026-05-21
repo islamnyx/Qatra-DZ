@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --disable-warning=ExperimentalWarning --watch index.js",
-    "test:blood": "node scripts/test-blood-features.js"
+    "dev": "node --watch index.js",
+    "test:blood": "node scripts/test-blood-features.js",
+    "test:chat": "node scripts/test-chat-intents.js"
   },
   "engines": {
     "node": ">=22"

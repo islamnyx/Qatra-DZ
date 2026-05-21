@@ -1,46 +1,91 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import BottomNav from "../../components/BottomNav";
 import LanguageToggle from "../../components/LanguageToggle";
 import { useLanguage } from "../../context/LanguageContext";
 import { useDonor } from "../../context/DonorContext";
-import { fetchPrompts, sendChatMessage } from "./api/chatService";
+import { fetchWelcome, sendChatMessage } from "./api/chatService";
 import { Bot, Send } from "lucide-react";
 
 function nowTime() {
   return new Date().toLocaleTimeString("ar-DZ", { hour: "2-digit", minute: "2-digit" });
 }
 
+function TypingIndicator() {
+  return (
+    <div className="flex justify-end items-center gap-1">
+      <div className="rounded-2xl bg-red-100 px-4 py-3 flex gap-1">
+        <span className="h-2 w-2 rounded-full bg-red-500 animate-bounce [animation-delay:0ms]" />
+        <span className="h-2 w-2 rounded-full bg-red-500 animate-bounce [animation-delay:150ms]" />
+        <span className="h-2 w-2 rounded-full bg-red-500 animate-bounce [animation-delay:300ms]" />
+      </div>
+    </div>
+  );
+}
+
+function BotMessage({ text }) {
+  const parts = text.split(/\n\n+/).filter(Boolean);
+  return (
+    <div className="space-y-2">
+      {parts.map((p, i) => (
+        <p key={i} className="text-sm leading-relaxed whitespace-pre-wrap">
+          {p}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export default function ChatPage() {
   const { t, lang } = useLanguage();
-  const { donor } = useDonor();
+  const { donor, apiOnline } = useDonor();
   const [messages, setMessages] = useState([]);
-  const [prompts, setPrompts] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const endRef = useRef(null);
+  const inputRef = useRef(null);
+  const userHasSent = messages.some((m) => m.role === "user");
 
-  useEffect(() => {
+  const initChat = useCallback(async () => {
+    const welcome = await fetchWelcome(lang, donor?.id);
     setMessages([
       {
-        id: 1,
+        id: "welcome",
         role: "bot",
-        text: lang === "fr" ? "Bonjour ! Je suis DamBot." : "مرحباً! أنا DamBot.",
+        text: welcome.text,
         time: nowTime(),
+        intent: "greeting",
       },
     ]);
-    fetchPrompts(lang).then(setPrompts);
-  }, [lang]);
+    setSuggestions(welcome.suggestions ?? []);
+  }, [lang, donor?.id]);
+
+  useEffect(() => {
+    initChat();
+  }, [initChat]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing]);
+  }, [messages, typing, suggestions]);
 
   const sendMessage = async (text) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    setMessages((m) => [...m, { id: Date.now(), role: "user", text: trimmed, time: nowTime() }]);
+    if (!trimmed || typing) return;
+
+    const userMsg = {
+      id: `u-${Date.now()}`,
+      role: "user",
+      text: trimmed,
+      time: nowTime(),
+    };
+
+    const historyForApi = [...messages, userMsg];
+    setMessages((m) => [...m, userMsg]);
     setInput("");
+    setSuggestions([]);
     setTyping(true);
+
+    const minDelay = new Promise((r) => setTimeout(r, 450));
 
     const fallbackDonor = donor ?? {
       isEligible: true,
@@ -48,11 +93,26 @@ export default function ChatPage() {
       bloodType: "O-",
       name: "أمين",
       lastDonation: "",
+      id: "DZ-001",
     };
-    const reply = await sendChatMessage(trimmed, lang, fallbackDonor);
 
-    setMessages((m) => [...m, { id: Date.now() + 1, role: "bot", text: reply, time: nowTime() }]);
+    const [result] = await Promise.all([
+      sendChatMessage(trimmed, lang, fallbackDonor, apiOnline, historyForApi),
+      minDelay,
+    ]);
+
+    const botMsg = {
+      id: `b-${Date.now()}`,
+      role: "bot",
+      text: result.reply,
+      time: nowTime(),
+      intent: result.intent,
+    };
+
+    setMessages((m) => [...m, botMsg]);
+    setSuggestions(result.suggestions ?? []);
     setTyping(false);
+    inputRef.current?.focus();
   };
 
   return (
@@ -65,60 +125,90 @@ export default function ChatPage() {
             </div>
             <div>
               <h1 className="text-lg font-bold text-red-700">{t("chatTitle")}</h1>
-              <p className="text-xs text-gray-500">{t("chatSubtitle")}</p>
+              <p className="text-xs text-gray-500">
+                {apiOnline ? t("chatLive") : t("chatOffline")}
+              </p>
             </div>
           </div>
           <LanguageToggle />
         </div>
       </header>
-      <div className="px-4 py-2 flex gap-2 overflow-x-auto shrink-0">
-        {prompts.map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => sendMessage(p)}
-            className="shrink-0 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700"
-          >
-            {p}
-          </button>
-        ))}
-      </div>
-      <main className="flex-1 overflow-y-auto px-4 py-2 space-y-3">
+
+      {!apiOnline && (
+        <div className="mx-4 mt-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          {t("chatOfflineBanner")}
+        </div>
+      )}
+
+      <main className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-start" : "justify-end"}`}>
             <div
-              className={`max-w-[85%] rounded-2xl border px-3 py-2 ${
-                msg.role === "user" ? "border-red-100 bg-white" : "border-red-200 bg-red-600 text-white"
+              className={`max-w-[88%] rounded-2xl border px-3 py-2.5 ${
+                msg.role === "user"
+                  ? "border-red-100 bg-white shadow-sm"
+                  : "border-red-200 bg-red-600 text-white shadow-md"
               }`}
             >
-              <p className="text-sm leading-relaxed">{msg.text}</p>
-              <p className={`text-[10px] mt-1 ${msg.role === "user" ? "text-gray-400" : "text-red-200"}`}>
+              {msg.role === "bot" ? <BotMessage text={msg.text} /> : <p className="text-sm leading-relaxed">{msg.text}</p>}
+              <p className={`text-[10px] mt-1.5 ${msg.role === "user" ? "text-gray-400" : "text-red-200"}`}>
                 {msg.time}
               </p>
             </div>
           </div>
         ))}
-        {typing && (
-          <div className="flex justify-end">
-            <div className="rounded-2xl bg-red-100 px-4 py-2 text-sm text-red-600">...</div>
+
+        {typing && <TypingIndicator />}
+
+        {!typing && suggestions.length > 0 && (
+          <div className="pt-1 pb-2">
+            <p className="text-[10px] text-gray-500 mb-2 px-1">{t("chatSuggest")}</p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => sendMessage(s)}
+                  className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 shadow-sm hover:bg-red-50 active:scale-95 transition"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
         <div ref={endRef} />
       </main>
+
       <div className="shrink-0 border-t border-red-100 bg-white px-4 py-3 mb-16">
-        <div className="flex items-center gap-2 rounded-2xl border border-red-200 px-3 py-2">
-          <input
-            type="text"
+        {!userHasSent && suggestions.length > 0 && (
+          <p className="text-[10px] text-gray-400 mb-2 text-center">{t("chatStarterHint")}</p>
+        )}
+        <div className="flex items-end gap-2 rounded-2xl border border-red-200 bg-red-50/50 px-3 py-2 focus-within:border-red-400 focus-within:ring-1 focus-within:ring-red-200">
+          <textarea
+            ref={inputRef}
+            rows={1}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              e.target.style.height = "auto";
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 96)}px`;
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(input);
+              }
+            }}
             placeholder={t("chatPlaceholder")}
-            className="flex-1 bg-transparent text-sm outline-none"
+            className="flex-1 bg-transparent text-sm outline-none resize-none max-h-24 leading-relaxed"
           />
           <button
             type="button"
+            disabled={!input.trim() || typing}
             onClick={() => sendMessage(input)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-red-600"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Send className="h-4 w-4 text-white" />
           </button>

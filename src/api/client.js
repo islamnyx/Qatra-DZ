@@ -48,11 +48,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ donorId }),
     }),
-  sendChat: (message, lang, donorId = DEMO_DONOR_ID) =>
+  sendChat: (message, lang, donorId = DEMO_DONOR_ID, history = []) =>
     request("/chat", {
       method: "POST",
-      body: JSON.stringify({ message, lang, donorId }),
+      body: JSON.stringify({ message, lang, donorId, history }),
     }),
+  getChatWelcome: (lang, donorId = DEMO_DONOR_ID) =>
+    request(`/chat/welcome?lang=${lang}&donorId=${donorId}`),
   getChatPrompts: (lang) => request(`/chat/prompts?lang=${lang}`),
 
   // BloodSync — 12 core features
