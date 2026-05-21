@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #c42b2b;
+  --color-primary-light: #fff0f0;
+  --color-success: #1d9e75;
+  --color-warning: #ef9f27;
+  --color-danger: #c42b2b;
+  --color-border: #f0e0e0;
+  --color-surface: #fff8f8;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --radius-card: 16px;
+  --radius-btn: 10px;
+  --shadow-card: 0 2px 8px rgba(196, 43, 43, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  background: var(--color-surface);
+  color: #2d2d2d;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 500;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-btn);
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.btn-primary:hover {
+  background: #a82424;
+}
+
+.input-field {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-btn);
+  padding: 0.625rem 0.875rem;
+  width: 100%;
+  outline: none;
+}
+.input-field:focus {
+  box-shadow: 0 0 0 2px rgba(196, 43, 43, 0.25);
+  border-color: var(--color-primary);
+}
+
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.35); opacity: 0; }
+}
+
+.marker-pulse {
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+.leaflet-container {
+  font-family: var(--font-sans);
+  z-index: 0;
+}

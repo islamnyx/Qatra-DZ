@@ -1,6 +1,12 @@
-# قطرة — Qatra
+# قطرة — Qatra · BloodSync
 
-Blood donation app for the Algerian Red Crescent.
+Blood donation ecosystem for the Algerian Red Crescent.
+
+| App | Folder | Port | Users |
+|-----|--------|------|--------|
+| **Qatra** (donor mobile PWA) | project root `src/` | 5173 | Donors |
+| **BloodSync** (hospital panel) | `bloodsync/` | 5174 | Hospitals, CRA, Admin |
+| **API** | `server/` | 3001 | Both apps (REST) |
 
 ## Run in browser (frontend + backend)
 
