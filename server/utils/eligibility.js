@@ -1,4 +1,4 @@
-const MIN_DAYS_BETWEEN_DONATIONS = 56;
+export const MIN_DAYS_BETWEEN_DONATIONS = 56;
 
 export function getEligibility(lastDonation) {
   if (!lastDonation) {

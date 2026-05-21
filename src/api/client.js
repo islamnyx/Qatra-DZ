@@ -54,4 +54,45 @@ export const api = {
       body: JSON.stringify({ message, lang, donorId }),
     }),
   getChatPrompts: (lang) => request(`/chat/prompts?lang=${lang}`),
+
+  // BloodSync — 12 core features
+  checkEligibility: (body) =>
+    request("/blood/eligibility/check", { method: "POST", body: JSON.stringify(body) }),
+  getCenters: (wilaya) => request(`/blood/centers?wilaya=${encodeURIComponent(wilaya)}`),
+  getMilestones: (donorId = DEMO_DONOR_ID) => request(`/blood/milestones/${donorId}`),
+  getNextDonation: (lastDonation) =>
+    request(`/blood/next-donation?lastDonation=${encodeURIComponent(lastDonation)}`),
+  scheduleReminder: (lastDonation, donorId = DEMO_DONOR_ID) =>
+    request("/blood/reminders", {
+      method: "POST",
+      body: JSON.stringify({ lastDonation, donorId }),
+    }),
+  getBloodInventory: (wilaya, bloodType) => {
+    const q = new URLSearchParams({ wilaya });
+    if (bloodType) q.set("bloodType", bloodType);
+    return request(`/blood/inventory?${q}`);
+  },
+  getNearbyInventory: (wilaya, bloodType) =>
+    request(
+      `/blood/inventory/nearby?wilaya=${encodeURIComponent(wilaya)}&bloodType=${encodeURIComponent(bloodType)}`
+    ),
+  getExpiringUnits: (wilaya, days = 7) =>
+    request(`/blood/expiring?wilaya=${encodeURIComponent(wilaya)}&days=${days}`),
+  activateEmergency: (location, emergencyType = "shortage") =>
+    request("/blood/emergency", {
+      method: "POST",
+      body: JSON.stringify({ location, emergencyType }),
+    }),
+  coordinateTransfer: (bloodType, fromWilaya, toWilaya) =>
+    request("/blood/transfer", {
+      method: "POST",
+      body: JSON.stringify({ bloodType, fromWilaya, toWilaya }),
+    }),
+  contactRareDonors: (bloodType) =>
+    request("/blood/rare-donors", { method: "POST", body: JSON.stringify({ bloodType }) }),
+  getPrescreeningForm: () => request("/blood/prescreening"),
+  submitPrescreening: (answers) =>
+    request("/blood/prescreening", { method: "POST", body: JSON.stringify({ answers }) }),
+  getBloodLeaderboard: (region = "national") =>
+    request(`/blood/leaderboard?region=${encodeURIComponent(region)}`),
 };

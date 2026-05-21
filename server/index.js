@@ -12,6 +12,7 @@ import wilayasRouter from "./routes/wilayas.js";
 import feedRouter from "./routes/feed.js";
 import chatRouter from "./routes/chat.js";
 import leaderboardRouter from "./routes/leaderboard.js";
+import bloodRouter from "./routes/blood.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, "data");
@@ -32,6 +33,7 @@ app.use("/api/wilayas", wilayasRouter);
 app.use("/api/feed", feedRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/leaderboard", leaderboardRouter);
+app.use("/api/blood", bloodRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

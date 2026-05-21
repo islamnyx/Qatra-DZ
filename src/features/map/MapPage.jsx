@@ -14,6 +14,7 @@ import EmergencySheet from "./components/EmergencySheet";
 import { ALGER_CENTER } from "./mock/mapData";
 import { formatDistance } from "./utils/geo";
 import { MapPin, Locate, QrCode, Loader2 } from "lucide-react";
+import "leaflet/dist/leaflet.css";
 import "./map.css";
 
 const COMING_KEY = "qatra_drive_coming";

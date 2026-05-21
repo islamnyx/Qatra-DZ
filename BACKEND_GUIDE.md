@@ -37,7 +37,7 @@ Now: the frontend **asks the backend** over the network, and the backend reads/w
 | **Node.js** | Runs JavaScript on the server (not in the browser) | Same language as your React app |
 | **Express** | Web framework — defines URLs like `/api/sos/urgent` | Very common, small, easy to read |
 | **SQLite** | Database stored in one file `qatra.db` | No separate database server to install |
-| **better-sqlite3** | Node library to talk to SQLite | Fast and synchronous (simple code) |
+| **node:sqlite** | Built-in SQLite (Node 22+) — no native install | Works on any Node version without rebuild |
 | **CORS** | Allows the browser to call the API from another port | Needed because Vite is `:5173` and API is `:3001` |
 
 ---

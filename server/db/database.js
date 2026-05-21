@@ -1,20 +1,25 @@
-import Database from "better-sqlite3";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { SqliteCompatDatabase } from "./sqliteCompat.js";
 import { seedDatabase } from "./seed.js";
+import { ensureExtendedSeed } from "./extendedSeed.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, "..", "data", "qatra.db");
+const DATA_DIR = path.join(__dirname, "..", "data");
+const DB_PATH = path.join(DATA_DIR, "qatra.db");
 
 let db;
 
 export function getDb() {
   if (!db) {
-    db = new Database(DB_PATH);
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    db = new SqliteCompatDatabase(DB_PATH);
     db.pragma("journal_mode = WAL");
     db.pragma("foreign_keys = ON");
     initSchema(db);
     seedDatabase(db);
+    ensureExtendedSeed(db);
   }
   return db;
 }
