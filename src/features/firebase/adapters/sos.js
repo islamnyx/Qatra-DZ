@@ -1,11 +1,14 @@
-/**
- * TODO (Firebase team): realtime SOS with onSnapshot on sos_requests.
- * Priority: critical first, live updates on Home screen.
- */
-export async function getUrgentSos(_donorId) {
-  return undefined;
+import { listActiveSosForDonors } from "./hospitalDb.js";
+
+export async function getUrgentSos() {
+  const all = await listActiveSosForDonors();
+  const critical = all.filter((s) => s.urgency === "critical");
+  const sorted = [...(critical.length ? critical : all)].sort(
+    (a, b) => new Date(b.postedAt) - new Date(a.postedAt)
+  );
+  return sorted[0] || null;
 }
 
-export async function respondToSos(_sosId, _payload) {
-  return undefined;
+export async function getAllSos() {
+  return listActiveSosForDonors();
 }

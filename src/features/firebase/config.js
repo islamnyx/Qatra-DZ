@@ -1,24 +1,24 @@
 /**
- * Firebase web config from environment variables.
- * Never commit .env.local — only .env.example
+ * Firebase web config from Vite env (see .env.example).
  */
 export function getFirebaseConfig() {
-  const config = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+  if (!apiKey || !projectId) return null;
+  return {
+    apiKey,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    projectId,
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
   };
+}
 
-  const missing = Object.entries(config)
-    .filter(([, v]) => !v)
-    .map(([k]) => k);
+export function isFirebaseConfigured() {
+  return Boolean(getFirebaseConfig());
+}
 
-  if (missing.length) {
-    return { config: null, missing };
-  }
-
-  return { config, missing: [] };
+export function getPrescreeningKey() {
+  return import.meta.env.VITE_PRESCREENING_KEY || "";
 }

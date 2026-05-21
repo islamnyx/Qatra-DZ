@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Droplet } from "lucide-react";
-import { mockApi } from "../api/mockApi";
+import { api } from "../api";
+import { isFirebaseConfigured } from "../services/firebase/init.js";
 import { useAuthStore, ROLE_LABELS } from "../store/authStore";
 
 const ROLES = [
@@ -24,7 +25,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { user, token } = await mockApi.login(email, password, role);
+      const { user, token } = await api.login(email, password, role);
       login({ ...user, role }, token);
       navigate(getDefaultRoute());
     } finally {
@@ -73,7 +74,11 @@ export default function Login() {
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
-        <p className="mt-4 text-center text-[10px] text-gray-400">Demo: any password · JWT simulated in localStorage</p>
+        <p className="mt-4 text-center text-[10px] text-gray-400">
+          {isFirebaseConfigured()
+            ? "Firebase Auth — hospital_staff accounts only"
+            : "Demo: any password · mock database in browser"}
+        </p>
       </div>
     </div>
   );

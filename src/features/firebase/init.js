@@ -1,61 +1,39 @@
-/**
- * Lazy Firebase initialization — only loads SDK when configured.
- */
+import { initializeApp, getApps } from "firebase/app";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getFirebaseConfig } from "./config.js";
 
-let appInstance = null;
-let dbInstance = null;
-let authInstance = null;
+let app = null;
+let auth = null;
+let db = null;
 
-export function isFirebaseConfigured() {
-  const { config } = getFirebaseConfig();
-  return Boolean(config);
-}
-
-export async function getFirebaseApp() {
-  if (appInstance) return appInstance;
-  const { config } = getFirebaseConfig();
+export function getFirebaseApp() {
+  const config = getFirebaseConfig();
   if (!config) return null;
-
-  const { initializeApp, getApps, getApp } = await import("firebase/app");
-  appInstance = getApps().length ? getApp() : initializeApp(config);
-  return appInstance;
+  if (!app) {
+    app = getApps().length ? getApps()[0] : initializeApp(config);
+  }
+  return app;
 }
 
-export async function getFirestoreDb() {
-  if (dbInstance) return dbInstance;
-  const app = await getFirebaseApp();
-  if (!app) return null;
-
-  const { getFirestore, connectFirestoreEmulator } = await import("firebase/firestore");
-  dbInstance = getFirestore(app);
-
-  if (import.meta.env.VITE_FIREBASE_USE_EMULATORS === "true") {
-    try {
-      connectFirestoreEmulator(dbInstance, "127.0.0.1", 8080);
-    } catch {
-      /* already connected */
+export function getFirebaseAuth() {
+  if (!getFirebaseApp()) return null;
+  if (!auth) {
+    auth = getAuth(getFirebaseApp());
+    if (import.meta.env.VITE_FIREBASE_USE_EMULATORS === "true") {
+      connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
     }
   }
-
-  return dbInstance;
+  return auth;
 }
 
-export async function getFirebaseAuth() {
-  if (authInstance) return authInstance;
-  const app = await getFirebaseApp();
-  if (!app) return null;
-
-  const { getAuth, connectAuthEmulator } = await import("firebase/auth");
-  authInstance = getAuth(app);
-
-  if (import.meta.env.VITE_FIREBASE_USE_EMULATORS === "true") {
-    try {
-      connectAuthEmulator(authInstance, "http://127.0.0.1:9099");
-    } catch {
-      /* already connected */
+export function getFirestoreDb() {
+  if (!getFirebaseApp()) return null;
+  if (!db) {
+    db = getFirestore(getFirebaseApp());
+    if (import.meta.env.VITE_FIREBASE_USE_EMULATORS === "true") {
+      connectFirestoreEmulator(db, "127.0.0.1", 8080);
     }
   }
-
-  return authInstance;
+  return db;
 }

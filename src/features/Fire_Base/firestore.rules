@@ -1,0 +1,203 @@
+rules_version = '2';
+
+// =============================================================================
+// Qatra-DZ — Production Firestore Security Rules
+// Collections: users, blood_inventory, blood_requests, pre_screening, hospitals
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null
+        && request.auth.uid != null
+        && request.auth.uid.size() > 0;
+    }
+
+    function userDocPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function userDoc() {
+      return get(userDocPath());
+    }
+
+    function userRole() {
+      return userDoc().data.role;
+    }
+
+    function isHospital() {
+      return isAuthenticated()
+        && userDoc().exists
+        && userRole() == 'hospital_staff';
+    }
+
+    function isDonor() {
+      return isAuthenticated()
+        && userDoc().exists
+        && userRole() == 'donor';
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isOwnDonorHash(donorHash) {
+      return isAuthenticated() && donorHash == request.auth.uid;
+    }
+
+    function isValidRole(role) {
+      return role == 'hospital_staff' || role == 'donor';
+    }
+
+    function isSelfRegistrationRole() {
+      return request.resource.data.role == 'donor';
+    }
+
+    function roleIsUnchanged() {
+      return request.resource.data.role == resource.data.role;
+    }
+
+    // --- Schema validators (blood_inventory) ---
+    function isValidBloodType(t) {
+      return t in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+    }
+
+    function isValidComponent(c) {
+      return c == 'RBC' || c == 'Platelets';
+    }
+
+    function isValidInventoryStatus(s) {
+      return s in ['available', 'expired', 'reserved'];
+    }
+
+    function isIsoDate(d) {
+      return d is string && d.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function validInventoryCreate() {
+      let d = request.resource.data;
+      return d.keys().hasAll([
+          'hospital_id', 'blood_type', 'component_type',
+          'donation_date', 'expiration_date', 'status'
+        ])
+        && d.hospital_id is string && d.hospital_id.size() > 0
+        && isValidBloodType(d.blood_type)
+        && isValidComponent(d.component_type)
+        && isIsoDate(d.donation_date)
+        && isIsoDate(d.expiration_date)
+        && isValidInventoryStatus(d.status)
+        && (!('quantity' in d));
+    }
+
+    function validInventoryUpdate() {
+      let d = request.resource.data;
+      let prev = resource.data;
+      return d.hospital_id == prev.hospital_id
+        && d.blood_type == prev.blood_type
+        && d.component_type == prev.component_type
+        && d.donation_date == prev.donation_date
+        && isValidInventoryStatus(d.status)
+        && isIsoDate(d.expiration_date);
+    }
+
+    // --- Schema validators (blood_requests) ---
+    function isValidUrgency(u) {
+      return u == 'CRITICAL' || u == 'MEDIUM';
+    }
+
+    function isValidRequestStatus(s) {
+      return s == 'pending' || s == 'fulfilled';
+    }
+
+    function noDirectMatchingFields() {
+      let d = request.resource.data;
+      return !('matched_donor_id' in d)
+        && !('matched_donor_hash' in d)
+        && !('donor_id' in d)
+        && !('donor_hash' in d);
+    }
+
+    function validBloodRequestCreate() {
+      let d = request.resource.data;
+      return d.keys().hasAll([
+          'hospital_id', 'required_blood_type', 'required_component',
+          'quantity_needed', 'urgency_level', 'status'
+        ])
+        && d.hospital_id is string && d.hospital_id.size() > 0
+        && isValidBloodType(d.required_blood_type)
+        && isValidComponent(d.required_component)
+        && d.quantity_needed is int && d.quantity_needed >= 1 && d.quantity_needed <= 99
+        && isValidUrgency(d.urgency_level)
+        && isValidRequestStatus(d.status)
+        && noDirectMatchingFields();
+    }
+
+    function validBloodRequestUpdate() {
+      return noDirectMatchingFields()
+        && isValidRequestStatus(request.resource.data.status);
+    }
+
+    // --- Schema validators (pre_screening) ---
+    function validPreScreeningCreate() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['encrypted_medical_answers'])
+        && d.encrypted_medical_answers is string
+        && d.encrypted_medical_answers.size() >= 16
+        && d.encrypted_medical_answers.size() <= 65536
+        && (!('donor_name' in d))
+        && (!('donor_email' in d))
+        && (!('full_name' in d));
+    }
+
+    // -------------------------------------------------------------------------
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;
+      allow create: if isOwner(uid)
+        && isValidRole(request.resource.data.role)
+        && isSelfRegistrationRole();
+      allow update: if isOwner(uid)
+        && isValidRole(request.resource.data.role)
+        && roleIsUnchanged();
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    match /hospitals/{hospitalId} {
+      allow read: if isHospital();
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    match /blood_inventory/{unit_id} {
+      allow read: if isHospital();
+      allow create: if isHospital() && validInventoryCreate();
+      allow update: if isHospital() && validInventoryUpdate();
+      allow delete: if isHospital();
+    }
+
+    // -------------------------------------------------------------------------
+    match /blood_requests/{request_id} {
+      allow read: if isAuthenticated();
+      allow create: if isHospital() && validBloodRequestCreate();
+      allow update: if isHospital() && validBloodRequestUpdate();
+      allow delete: if isHospital();
+    }
+
+    // -------------------------------------------------------------------------
+    match /pre_screening/{donor_hash} {
+      allow create: if isDonor()
+        && isOwnDonorHash(donor_hash)
+        && validPreScreeningCreate();
+      allow get: if isHospital()
+        || (isDonor() && isOwnDonorHash(donor_hash));
+      allow list: if false;
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

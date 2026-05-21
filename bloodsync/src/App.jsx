@@ -6,7 +6,9 @@ import Dashboard from "./pages/Dashboard";
 import MapView from "./pages/MapView";
 import NexusAI from "./pages/NexusAI";
 import Inventory from "./pages/Inventory";
+import BloodRequests from "./pages/BloodRequests";
 import Transfers from "./pages/Transfers";
+import Scanner from "./pages/Scanner";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import { useAuthStore } from "./store/authStore";
 
@@ -29,6 +31,14 @@ export default function App() {
         <Route path="/map" element={<MapView />} />
         <Route path="/nexus" element={<ProtectedRoute roles={["manager", "cra", "admin"]}><NexusAI /></ProtectedRoute>} />
         <Route path="/inventory" element={<Inventory />} />
+        <Route
+          path="/requests"
+          element={
+            <ProtectedRoute roles={["manager", "cra", "admin", "medical"]}>
+              <BloodRequests />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/transfers" element={<Transfers />} />
         <Route
           path="/drives"
@@ -50,7 +60,7 @@ export default function App() {
           path="/scanner"
           element={
             <ProtectedRoute roles={["medical"]}>
-              <PlaceholderPage title="Digital Passport Scanner" description="QR scan → donor eligibility. Links to Qatra passport API." />
+              <Scanner />
             </ProtectedRoute>
           }
         />

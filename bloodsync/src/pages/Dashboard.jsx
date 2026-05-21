@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import { AlertTriangle, Package, Clock, Truck } from "lucide-react";
-import { mockApi } from "../api/mockApi";
+import { api } from "../api";
 import { getStockUrgency } from "../mock/data";
 
 function KpiCard({ icon: Icon, label, value, accent }) {
@@ -25,7 +25,7 @@ export default function Dashboard() {
   const [recs, setRecs] = useState([]);
 
   useEffect(() => {
-    Promise.all([mockApi.getNationalKpis(), mockApi.getHospitals(), mockApi.getRecommendations()]).then(
+    Promise.all([api.getNationalKpis(), api.getHospitals(), api.getRecommendations()]).then(
       ([k, h, r]) => {
         setKpis(k);
         setHospitals(h);
