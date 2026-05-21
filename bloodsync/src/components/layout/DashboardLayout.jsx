@@ -6,7 +6,7 @@ import { useAuthStore } from "../../store/authStore";
 
 const TITLES = {
   "/dashboard": "Dashboard Overview",
-  "/map": "GPS Hospital Map",
+  "/map": "Operations Command Map",
   "/nexus": "Nexus AI",
   "/inventory": "National Inventory",
   "/transfers": "Transfer Request Log",
