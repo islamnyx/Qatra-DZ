@@ -4,11 +4,15 @@
  */
 import { DatabaseSync } from "node:sqlite";
 
-function bindArgs(args) {
-  if (args.length === 1 && args[0] !== null && typeof args[0] === "object" && !Array.isArray(args[0])) {
-    return args[0];
+function isNamedParams(arg) {
+  return arg !== null && typeof arg === "object" && !Array.isArray(arg);
+}
+
+function execStmt(stmt, method, args) {
+  if (args.length === 1 && isNamedParams(args[0])) {
+    return stmt[method](args[0]);
   }
-  return args;
+  return stmt[method](...args);
 }
 
 class CompatStatement {
@@ -17,16 +21,16 @@ class CompatStatement {
   }
 
   get(...args) {
-    const row = this._stmt.get(...bindArgs(args));
+    const row = execStmt(this._stmt, "get", args);
     return row === undefined ? undefined : row;
   }
 
   all(...args) {
-    return this._stmt.all(...bindArgs(args));
+    return execStmt(this._stmt, "all", args);
   }
 
   run(...args) {
-    this._stmt.run(...bindArgs(args));
+    execStmt(this._stmt, "run", args);
     return { changes: this._stmt.changes ?? 0 };
   }
 }

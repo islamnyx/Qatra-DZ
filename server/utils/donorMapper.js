@@ -14,6 +14,7 @@ export function mapDonorRow(row) {
     isEligible,
     daysUntilEligible,
     familyCircleActive: Boolean(row.family_circle_active),
+    isRareDonor: Boolean(row.is_rare_donor),
   };
 }
 
@@ -22,10 +23,14 @@ export function mapSosRow(row) {
     id: row.id,
     bloodType: row.blood_type,
     hospital: row.hospital,
+    hospitalAr: row.hospital_ar || row.hospital,
+    hospitalFr: row.hospital_fr || row.hospital,
     wilaya: row.wilaya,
     urgency: row.urgency,
     postedAt: row.posted_at,
     active: Boolean(row.active),
+    lat: row.lat ?? null,
+    lng: row.lng ?? null,
   };
 }
 

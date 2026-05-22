@@ -14,6 +14,7 @@ import chatRouter from "./routes/chat.js";
 import leaderboardRouter from "./routes/leaderboard.js";
 import bloodRouter from "./routes/blood.js";
 import nexusRouter from "./routes/nexus.js";
+import mapRouter from "./routes/map.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, "data");
@@ -40,6 +41,7 @@ app.use("/api/chat", chatRouter);
 app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/blood", bloodRouter);
 app.use("/api/nexus", nexusRouter);
+app.use("/api/map", mapRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

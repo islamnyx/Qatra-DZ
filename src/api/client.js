@@ -41,6 +41,7 @@ export const api = {
       body: JSON.stringify({ donorId, eta }),
     }),
   getWilayas: () => request("/wilayas"),
+  getDonorMap: (query = "") => request(`/map/donor${query}`),
   getFeed: (donorId = DEMO_DONOR_ID) =>
     request(`/feed?donorId=${donorId}`),
   registerCampaign: (feedId, donorId = DEMO_DONOR_ID) =>

@@ -1,6 +1,7 @@
 import { getDb } from "../db/database.js";
 import { getEligibility, MIN_DAYS_BETWEEN_DONATIONS } from "../utils/eligibility.js";
-import { mapDonorRow } from "../utils/donorMapper.js";
+import { mapDonorRow, mapSosRow } from "../utils/donorMapper.js";
+import { mapCenterRow } from "../utils/mapMapper.js";
 import { evaluateEligibility, normalizeBloodType } from "./eligibilityRules.js";
 import { badgesForDonationCount, nextMilestone, syncDonorBadges } from "./badgeSync.js";
 import { evaluatePrescreening, getPrescreeningForm } from "./prescreening.js";
@@ -19,6 +20,9 @@ const WILAYA_ALIASES = {
   bejaia: "Béjaïa",
   béjaïa: "Béjaïa",
   bejaïa: "Béjaïa",
+  mostaganem: "Mostaganem",
+  mila: "Mila",
+  skikda: "Skikda",
 };
 
 export function resolveWilaya(input) {
@@ -65,13 +69,23 @@ export function findNearestCenters(location) {
 
   return {
     wilaya,
-    centers: rows.map((r) => ({
-      name: r.name,
-      address: r.address,
-      hours: r.hours,
-      phone: r.phone,
-      mobileDrive: r.mobile_drive,
-    })),
+    centers: rows.map((r) => {
+      const mapped = mapCenterRow(r);
+      return {
+        id: mapped.id,
+        name: r.name,
+        nameAr: mapped.nameAr,
+        nameFr: mapped.nameFr,
+        address: r.address,
+        hours: r.hours,
+        hoursStructured: mapped.hours,
+        phone: r.phone,
+        mobileDrive: r.mobile_drive,
+        lat: mapped.lat,
+        lng: mapped.lng,
+        mapPath: "/map",
+      };
+    }),
   };
 }
 
@@ -261,8 +275,11 @@ export function activateEmergency(emergencyType, location) {
       "CRA emergency hotline 3030 notified",
     ],
     priorityTypes: ["O-", "O+", "AB-"],
-    activeSos: critical,
-    lowInventory: lowStock,
+    activeSos: critical.map(mapSosRow),
+    lowInventory: lowStock.map((r) => ({
+      bloodType: r.blood_type,
+      units: r.units,
+    })),
     estimatedResponseMinutes: "30-60",
   };
 }
@@ -287,10 +304,17 @@ export function coordinateTransfer(bloodType, fromWilaya, toWilaya) {
   }
 
   const transferId = `TR-${Date.now()}`;
-  db.prepare(
-    `INSERT INTO cross_region_transfers (id, blood_type, from_wilaya, to_wilaya, units, status, created_at)
-     VALUES (?, ?, ?, ?, 2, 'in_transit', datetime('now'))`
-  ).run(transferId, type, from, to);
+  const tx = db.transaction(() => {
+    db.prepare(
+      `UPDATE blood_inventory SET units = units - 2, updated_at = datetime('now')
+       WHERE wilaya = ? AND blood_type = ?`
+    ).run(from, type);
+    db.prepare(
+      `INSERT INTO cross_region_transfers (id, blood_type, from_wilaya, to_wilaya, units, status, created_at)
+       VALUES (?, ?, ?, ?, 2, 'in_transit', datetime('now'))`
+    ).run(transferId, type, from, to);
+  });
+  tx();
 
   return {
     transferId,

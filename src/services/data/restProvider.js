@@ -48,8 +48,8 @@ export async function registerCampaign(feedId, donorId) {
   return api.registerCampaign(feedId, donorId);
 }
 
-export async function sendChat(message, lang, donorId) {
-  return api.sendChat(message, lang, donorId);
+export async function sendChat(message, lang, donorId, history = []) {
+  return api.sendChat(message, lang, donorId, history);
 }
 
 export async function getChatPrompts(lang) {

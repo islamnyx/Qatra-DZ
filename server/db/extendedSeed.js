@@ -1,4 +1,5 @@
 /** Seeds extended BloodSync tables (runs even when donors already exist). */
+import { ensureGeoMigration } from "./geoMigration.js";
 
 const INVENTORY_DEFAULTS = {
   Alger: { "O-": 5, "O+": 12, "A-": 3, "A+": 8, "B-": 2, "B+": 7, "AB-": 1, "AB+": 4 },
@@ -132,4 +133,6 @@ export function ensureExtendedSeed(db) {
     "INSERT OR IGNORE INTO wilayas (name, name_ar, status, shortage, hospitals) VALUES (?, ?, ?, ?, ?)"
   );
   for (const row of wilayaExtras) insertW.run(...row);
+
+  ensureGeoMigration(db);
 }
