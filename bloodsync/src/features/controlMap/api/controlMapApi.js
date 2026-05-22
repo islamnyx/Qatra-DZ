@@ -13,14 +13,15 @@ import { haversineKm } from "../utils/geo.js";
 
 export { BLOOD_TYPES_FILTER };
 
-export async function loadControlMapData(bloodType = "O-") {
+/** Map payload — heatmap is recomputed in the view when blood type changes. */
+export async function loadControlMapData() {
   const [hospitalList, recommendations, expiring] = await Promise.all([
     mockApi.getHospitals(),
     mockApi.getRecommendations(),
     mockApi.getExpiring(120),
   ]);
 
-  const heatmap = buildWilayaHeatmap(hospitalList, WILAYA_REGIONS, bloodType);
+  const heatmap = buildWilayaHeatmap(hospitalList, WILAYA_REGIONS, "O-");
 
   const hospitalByName = Object.fromEntries(hospitalList.map((h) => [h.name, h]));
 

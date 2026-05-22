@@ -3,7 +3,9 @@ import { BLOOD_TYPES_FILTER } from "../api/controlMapApi";
 import { HEAT_LEVELS } from "../utils/heatmap";
 
 const LAYER_OPTS = [
-  { key: "heatmap", label: "Wilaya heatmap" },
+  { key: "countries", label: "Country borders" },
+  { key: "mapLabels", label: "Map labels" },
+  { key: "heatmap", label: "Supply risk (wilaya)" },
   { key: "hospitals", label: "Hospital network" },
   { key: "expiry", label: "Expiry alerts" },
   { key: "drives", label: "Mobile drives" },
@@ -16,6 +18,7 @@ const LAYER_OPTS = [
 export default function MapToolbar({
   bloodType,
   onBloodType,
+  heatmapSummary,
   layers,
   onToggleLayer,
   search,
@@ -31,15 +34,26 @@ export default function MapToolbar({
       <div className="flex items-center gap-2 mb-2 text-slate-300">
         <Layers className="h-4 w-4 text-red-500" />
         <span className="text-xs font-semibold uppercase tracking-wide">Operations map</span>
+        <span className="text-[10px] text-slate-500 ml-1">— national blood network</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <select value={bloodType} onChange={(e) => onBloodType(e.target.value)} aria-label="Blood type filter">
-          {BLOOD_TYPES_FILTER.map((t) => (
-            <option key={t} value={t}>
-              {t === "Platelets" ? "Platelets heatmap" : `${t} heatmap`}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-col gap-0.5">
+          <label className="text-[10px] text-slate-500" htmlFor="ops-blood-type">
+            Supply risk for blood type
+          </label>
+          <select
+            id="ops-blood-type"
+            value={bloodType}
+            onChange={(e) => onBloodType(e.target.value)}
+            aria-label="Blood type for supply risk layer"
+          >
+            {BLOOD_TYPES_FILTER.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
         <select value={wilayaFilter} onChange={(e) => onWilayaFilter(e.target.value)}>
           <option value="">All wilayas</option>
           {wilayas.map((w) => (
@@ -64,6 +78,32 @@ export default function MapToolbar({
           <option value="broadcast">Alert broadcast</option>
         </select>
       </div>
+      {layers.heatmap && heatmapSummary && (
+        <p className="mt-1.5 text-[10px] text-slate-400">
+          <span className="text-slate-300 font-semibold">{bloodType}</span> — days of supply per wilaya:{" "}
+          {heatmapSummary.critical > 0 && (
+            <span style={{ color: HEAT_LEVELS.critical.color }}>{heatmapSummary.critical} critical</span>
+          )}
+          {heatmapSummary.low > 0 && (
+            <span style={{ color: HEAT_LEVELS.low.color }}>
+              {heatmapSummary.critical > 0 ? ", " : ""}
+              {heatmapSummary.low} low
+            </span>
+          )}
+          {heatmapSummary.moderate > 0 && (
+            <span style={{ color: HEAT_LEVELS.moderate.color }}>
+              {heatmapSummary.critical + heatmapSummary.low > 0 ? ", " : ""}
+              {heatmapSummary.moderate} moderate
+            </span>
+          )}
+          {heatmapSummary.adequate > 0 && (
+            <span style={{ color: HEAT_LEVELS.adequate.color }}>
+              {heatmapSummary.critical + heatmapSummary.low + heatmapSummary.moderate > 0 ? ", " : ""}
+              {heatmapSummary.adequate} adequate
+            </span>
+          )}
+        </p>
+      )}
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
         {LAYER_OPTS.map(({ key, label }) => (
           <label key={key}>

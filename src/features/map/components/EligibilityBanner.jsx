@@ -26,7 +26,7 @@ export default function EligibilityBanner({ isEligible, daysUntilEligible }) {
       </span>
       <div>
         <p className="font-bold text-gray-800 text-sm">
-          {t("mapCooldown")} {daysUntilEligible} {t("days")}
+          {t("mapCooldown")} {daysUntilEligible ?? 0} {t("days")}
         </p>
         <p className="text-xs text-gray-600">{t("mapCooldownHint")}</p>
       </div>

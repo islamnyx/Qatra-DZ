@@ -1,155 +1,142 @@
-import { useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, Circle, useMap } from "react-leaflet";
-import { centerIcon, driveIcon, emergencyIcon, userIcon } from "../utils/markers.js";
-import { getDriveStatus } from "../utils/driveStatus.js";
+import { memo } from "react";
+import { MapContainer, TileLayer } from "react-leaflet";
 import { ALGER_CENTER } from "../mock/mapData.js";
 import { formatDistance } from "../utils/geo.js";
+import DonorMapLayers from "./DonorMapLayers.jsx";
+import MapRecenter from "./MapRecenter.jsx";
+import MapFollowGuard from "./MapFollowGuard.jsx";
+import MapLocateControl from "./MapLocateControl.jsx";
+import WorldLabelsLayer from "./WorldLabelsLayer.jsx";
+import MaghrebCityLabels from "./MaghrebCityLabels.jsx";
+import RoutePathLayer from "./RoutePathLayer.jsx";
 
-function MapRecenter({ center, zoom }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center) map.setView(center, zoom ?? map.getZoom());
-  }, [center, zoom, map]);
-  return null;
-}
+/** Fixed initial view — never bind to GPS or the map remounts / jumps on every fix. */
+const MAP_INITIAL_CENTER = ALGER_CENTER;
+const MAP_INITIAL_ZOOM = 6;
 
-export default function DonorMap({
+function DonorMapInner({
   userPosition,
   centers,
   drives,
   emergencies,
   isEligible,
-  selectedCenter,
-  selectedDrive,
-  selectedEmergency,
-  routeTarget,
+  routePath,
+  routeSource,
   qrHighlightDriveId,
+  recenterTarget,
+  positionAccuracyM,
+  totalDonations = 0,
+  wilayas,
+  onSelectWilaya,
   onSelectCenter,
   onSelectDrive,
   onSelectEmergency,
-  className = "",
+  onUserMovedMap,
+  onLocate,
+  locateLoading,
+  locateLabel,
+  lang = "ar",
+  className,
 }) {
-  const mapCenter = userPosition ?? ALGER_CENTER;
-  const zoom = userPosition ? 13 : 11;
-
-  const activeDrives = useMemo(
-    () => drives.filter((d) => getDriveStatus(d) !== "past"),
-    [drives]
-  );
-
-  const routeLine = useMemo(() => {
-    if (!userPosition || !routeTarget) return null;
-    return [
-      [userPosition[0], userPosition[1]],
-      [routeTarget.lat, routeTarget.lng],
-    ];
-  }, [userPosition, routeTarget]);
-
   return (
-    <div className={`donor-map-root ${isEligible ? "eligible-map-glow" : ""} ${className}`}>
-      <MapContainer center={mapCenter} zoom={zoom} scrollWheelZoom className="h-full w-full">
+    <div className={`donor-map-root ${isEligible ? "eligible-map-glow" : ""} ${className ?? ""}`}>
+      <MapContainer
+        center={MAP_INITIAL_CENTER}
+        zoom={MAP_INITIAL_ZOOM}
+        minZoom={2}
+        maxZoom={18}
+        preferCanvas
+        zoomAnimationThreshold={6}
+        fadeAnimation={false}
+        scrollWheelZoom
+        className="h-full w-full"
+      >
+        {/* Base without labels — our GeoJSON draws correct Morocco / Western Sahara borders */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; OpenStreetMap &copy; <a href="https://carto.com/">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+          maxZoom={19}
+          minZoom={2}
+          updateWhenZooming={false}
+          updateWhenIdle
+          keepBuffer={3}
         />
-        {userPosition && <MapRecenter center={userPosition} zoom={zoom} />}
 
-        {userPosition && (
-          <>
-            <Marker position={userPosition} icon={userIcon()} />
-            <Circle
-              center={userPosition}
-              radius={2500}
-              pathOptions={{
-                color: "#22c55e",
-                fillColor: "#22c55e",
-                fillOpacity: 0.15,
-                weight: 1,
-                className: "impact-zone-pulse",
-              }}
-            />
-            <Circle
-              center={userPosition}
-              radius={1200}
-              pathOptions={{
-                color: "#86efac",
-                fillColor: "#bbf7d0",
-                fillOpacity: 0.08,
-                weight: 0,
-              }}
-            />
-          </>
+        <DonorMapLayers
+          wilayas={wilayas}
+          centers={centers}
+          drives={drives}
+          emergencies={emergencies}
+          isEligible={isEligible}
+          qrHighlightDriveId={qrHighlightDriveId}
+          userPosition={userPosition}
+          positionAccuracyM={positionAccuracyM}
+          totalDonations={totalDonations}
+          onSelectWilaya={onSelectWilaya}
+          onSelectCenter={onSelectCenter}
+          onSelectDrive={onSelectDrive}
+          onSelectEmergency={onSelectEmergency}
+        />
+
+        {routePath?.length >= 2 && (
+          <RoutePathLayer path={routePath} source={routeSource} />
         )}
 
-        {routeLine && (
-          <Polyline
-            positions={routeLine}
-            pathOptions={{
-              color: "#dc2626",
-              weight: 4,
-              opacity: 0.85,
-              className: "map-route-line",
-            }}
+        <MapRecenter recenterTarget={recenterTarget} />
+        <MapFollowGuard onUserMovedMap={onUserMovedMap} />
+
+        <WorldLabelsLayer lang={lang} />
+        <MaghrebCityLabels />
+
+        {onLocate && (
+          <MapLocateControl
+            onLocate={onLocate}
+            loading={locateLoading}
+            label={locateLabel}
           />
         )}
-
-        {centers.map((c) => {
-          const locked = !isEligible;
-          const isSelected = selectedCenter?.id === c.id;
-          return (
-            <Marker
-              key={c.id}
-              position={[c.lat, c.lng]}
-              icon={centerIcon(locked)}
-              opacity={locked ? 0.55 : 1}
-              eventHandlers={{ click: () => onSelectCenter(c) }}
-              zIndexOffset={isSelected ? 500 : 0}
-            />
-          );
-        })}
-
-        {activeDrives.map((d) => {
-          const status = getDriveStatus(d);
-          const qrHighlight = d.id === qrHighlightDriveId;
-          return (
-            <Marker
-              key={d.id}
-              position={[d.lat, d.lng]}
-              icon={driveIcon(status, qrHighlight)}
-              eventHandlers={{ click: () => onSelectDrive(d) }}
-              zIndexOffset={selectedDrive?.id === d.id ? 600 : 100}
-            />
-          );
-        })}
-
-        {emergencies.map((a) => (
-          <Marker
-            key={a.id}
-            position={[a.lat, a.lng]}
-            icon={emergencyIcon()}
-            eventHandlers={{ click: () => onSelectEmergency(a) }}
-            zIndexOffset={selectedEmergency?.id === a.id ? 700 : 200}
-          />
-        ))}
       </MapContainer>
     </div>
   );
 }
 
+const DonorMap = memo(DonorMapInner);
+export default DonorMap;
+
 export function MapLegendChip({ label, color }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-gray-700 shadow border border-red-50">
-      <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: color }} />
       {label}
     </span>
   );
 }
 
-export function RouteSummary({ center, lang, t }) {
-  if (!center?.distanceKm) return null;
+export function RouteSummary({ center, routeInfo, routeLoading, lang, t }) {
+  if (!center) return null;
+  if (routeLoading) {
+    return (
+      <p className="text-center text-xs font-semibold text-red-600 px-4 py-1 bg-white/90 animate-pulse">
+        {t("mapRouteLoading")} {center.nameAr}
+      </p>
+    );
+  }
+  const roadKm = routeInfo?.distanceKm;
+  if (roadKm == null && center.distanceKm == null) return null;
   return (
     <p className="text-center text-xs font-semibold text-red-700 px-4 py-1 bg-white/90">
-      {t("mapRouteTo")} {center.nameAr} — {formatDistance(center.distanceKm, lang)}
+      {t("mapRouteTo")} {center.nameAr}
+      {roadKm != null ? (
+        <>
+          {" — "}
+          {formatDistance(roadKm, lang)}
+          {routeInfo?.source === "roads" && (
+            <span className="text-gray-500 font-normal"> · {t("mapRouteByRoad")}</span>
+          )}
+        </>
+      ) : (
+        center.distanceKm != null && <> — {formatDistance(center.distanceKm, lang)}</>
+      )}
     </p>
   );
 }

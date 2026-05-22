@@ -37,15 +37,20 @@ export function PlannerPanel({
   analysis,
   onClear,
   onAnalyze,
+  onFinishPolygon,
   onDeploy,
   deploying,
 }) {
   if (!polygon?.length) return null;
+  const canAnalyze = polygon.length >= 3;
   return (
     <div className="ops-panel-float absolute bottom-20 right-[400px] z-[500] w-80 rounded-xl p-4 shadow-xl">
       <p className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
         <MapPinned className="h-4 w-4" /> Drive deployment zone ({polygon.length} points)
       </p>
+      {!canAnalyze && (
+        <p className="mt-1 text-[10px] text-amber-400/90">Add at least 3 points, then Analyze.</p>
+      )}
       {analysis ? (
         <div className="mt-2 text-xs text-slate-300 space-y-1">
           <p>
@@ -58,8 +63,22 @@ export function PlannerPanel({
       ) : (
         <p className="mt-2 text-xs text-slate-500">Click Analyze to estimate donor density in polygon.</p>
       )}
-      <div className="mt-3 flex gap-2">
-        <button type="button" onClick={onAnalyze} className="flex-1 rounded-lg border border-[#475569] py-1.5 text-xs text-slate-200">
+      <div className="mt-3 flex flex-wrap gap-2">
+        {canAnalyze && !analysis && onFinishPolygon && (
+          <button
+            type="button"
+            onClick={onFinishPolygon}
+            className="w-full rounded-lg border border-emerald-700/50 py-1.5 text-xs text-emerald-300"
+          >
+            Close polygon
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onAnalyze}
+          disabled={!canAnalyze}
+          className="flex-1 rounded-lg border border-[#475569] py-1.5 text-xs text-slate-200 disabled:opacity-40"
+        >
           Analyze zone
         </button>
         <button
@@ -88,10 +107,15 @@ export function BroadcastPanel({
   onBroadcast,
   broadcasting,
   onClose,
+  stackOffset = false,
 }) {
   if (!center) return null;
   return (
-    <div className="ops-panel-float absolute bottom-20 left-3 z-[500] w-80 rounded-xl p-4 shadow-xl">
+    <div
+      className={`ops-panel-float absolute z-[500] w-80 rounded-xl p-4 shadow-xl ${
+        stackOffset ? "bottom-20 left-[21rem]" : "bottom-20 left-3"
+      }`}
+    >
       <div className="flex justify-between mb-2">
         <p className="text-xs font-semibold text-red-400 flex items-center gap-1">
           <Radio className="h-4 w-4" /> Regional alert broadcast
@@ -126,7 +150,7 @@ export function BroadcastPanel({
       <p className="mt-2 text-sm text-amber-200/90 font-medium">
         هذا التنبيه سيصل إلى ~{estimatedReach} متبرع مؤهل
       </p>
-      <p className="text-[10px] text-slate-500 mt-1">Anonymous SMS/push — CRA mediated</p>
+      <p className="text-[10px] text-slate-500 mt-1">Anonymous SMS/push — FADS mediated</p>
       <button
         type="button"
         disabled={broadcasting}

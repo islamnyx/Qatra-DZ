@@ -1,3 +1,5 @@
+@import "leaflet/dist/leaflet.css";
+
 .donor-map-root {
   height: calc(100vh - 5.5rem);
   min-height: 320px;
@@ -8,6 +10,14 @@
 .donor-map-root .leaflet-container {
   font-family: inherit;
   background: #fef2f2;
+}
+
+.map-locate-control {
+  pointer-events: auto !important;
+}
+
+.map-locate-control button {
+  cursor: pointer;
 }
 
 /* Custom markers */
@@ -102,17 +112,144 @@
   box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.35);
 }
 
-.impact-zone-pulse {
+.leaflet-pane svg path.impact-zone-pulse {
   animation: impact-pulse 3s ease-in-out infinite;
+  transition: d 0.8s ease-out;
+}
+
+.leaflet-pane svg path.impact-zone-inner {
+  animation: impact-inner-glow 2.4s ease-in-out infinite;
+}
+
+.leaflet-pane svg path.impact-zone-tier-hero,
+.leaflet-pane svg path.impact-zone-tier-legend {
+  animation-duration: 2.2s;
+}
+
+.leaflet-pane svg path.impact-zone-tier-legend {
+  animation-name: impact-pulse-legend;
 }
 
 @keyframes impact-pulse {
   0%,
   100% {
-    fill-opacity: 0.12;
+    fill-opacity: 0.1;
+    stroke-opacity: 0.55;
   }
   50% {
     fill-opacity: 0.22;
+    stroke-opacity: 0.85;
+  }
+}
+
+@keyframes impact-pulse-legend {
+  0%,
+  100% {
+    fill-opacity: 0.14;
+    stroke-opacity: 0.65;
+  }
+  50% {
+    fill-opacity: 0.28;
+    stroke-opacity: 0.95;
+  }
+}
+
+@keyframes impact-inner-glow {
+  0%,
+  100% {
+    fill-opacity: 0.1;
+  }
+  50% {
+    fill-opacity: 0.2;
+  }
+}
+
+/* Lives counter on map — feature 2.7 */
+.impact-lives-badge {
+  background: transparent !important;
+  border: none !important;
+}
+
+.impact-lives-badge__inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fff 55%);
+  border: 2px solid #dc2626;
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.35);
+  font-size: 11px;
+  font-weight: 800;
+  color: #b91c1c;
+  animation: lives-badge-float 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.impact-lives-badge__heart {
+  color: #ef4444;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.impact-lives-badge__count {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes lives-badge-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Impact panel above map */
+.impact-zone-panel {
+  background: linear-gradient(180deg, #f0fdf4 0%, #fff 70%);
+  border-color: #86efac;
+  animation: impact-panel-in 0.5s ease-out;
+}
+
+.impact-zone-panel--seed {
+  border-color: #fde68a;
+  background: linear-gradient(180deg, #fffbeb 0%, #fff 70%);
+}
+
+.impact-zone-panel--hero,
+.impact-zone-panel--legend {
+  border-color: #fca5a5;
+  background: linear-gradient(180deg, #fef2f2 0%, #f0fdf4 45%, #fff 100%);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.08);
+}
+
+.impact-zone-heart-wrap {
+  animation: impact-heartbeat 1.4s ease-in-out infinite;
+}
+
+@keyframes impact-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes impact-heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.12);
+  }
+  50% {
+    transform: scale(1);
   }
 }
 
@@ -130,13 +267,128 @@
   }
 }
 
-.map-route-line {
+.map-route-line--roads {
+  filter: drop-shadow(0 0 2px rgba(220, 38, 38, 0.35));
+}
+
+.map-route-line:not(.map-route-line--roads) {
   stroke-dasharray: 8 6;
   animation: route-dash 20s linear infinite;
+}
+
+/* World map — continents / oceans / countries (English continents, no CJK tiles) */
+.map-world-label {
+  background: transparent !important;
+  border: none !important;
+}
+
+.map-world-label span {
+  display: block;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  white-space: nowrap;
+  text-shadow:
+    0 0 4px #fff,
+    0 0 8px #fff,
+    0 1px 2px rgba(255, 255, 255, 0.95);
+}
+
+.map-world-label--continent span {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #171717;
+}
+
+.map-world-label--ocean span {
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  color: #0369a1;
+  text-transform: none;
+}
+
+.map-world-label--country span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: none;
+}
+
+/* Wilaya label: Arabic first, English second — single stacked block */
+.donor-wilaya-label {
+  background: transparent !important;
+  border: none !important;
+}
+
+.donor-wilaya-label .wilaya-label-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  line-height: 1.15;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  text-shadow:
+    0 0 3px #fff,
+    0 0 6px #fff,
+    0 1px 2px rgba(255, 255, 255, 0.95);
+}
+
+.donor-wilaya-label .wilaya-ar {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.donor-wilaya-label .wilaya-en {
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0.92;
+  margin-top: 1px;
+}
+
+.donor-wilaya-label .wilaya-label-stack.critical .wilaya-ar {
+  color: #b91c1c;
+}
+
+.donor-wilaya-label .wilaya-label-stack.critical .wilaya-en {
+  color: #991b1b;
+}
+
+.donor-wilaya-label .wilaya-label-stack.ok .wilaya-ar {
+  color: #15803d;
+}
+
+.donor-wilaya-label .wilaya-label-stack.ok .wilaya-en {
+  color: #166534;
+}
+
+.donor-wilaya-label .wilaya-country {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 1px;
+  opacity: 0.95;
+}
+
+.donor-wilaya-label .wilaya-label-stack.neighbor .wilaya-ar {
+  color: #334155;
+}
+
+.donor-wilaya-label .wilaya-label-stack.neighbor .wilaya-en {
+  color: #64748b;
 }
 
 @keyframes route-dash {
   to {
     stroke-dashoffset: -200;
   }
+}
+
+/* Hide default Leaflet tooltip chrome if any layer still binds one */
+.leaflet-tooltip.map-leaflet-tooltip {
+  display: none !important;
 }

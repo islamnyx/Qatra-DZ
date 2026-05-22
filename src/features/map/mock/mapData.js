@@ -4,7 +4,7 @@ export const donationCenters = [
   {
     id: "cra-alger-centre",
     nameAr: "مركز الجزائر الوسطى",
-    nameFr: "CRA Alger Centre",
+    nameFr: "FADS Alger Centre",
     lat: 36.7538,
     lng: 3.0588,
     phone: "+21321234567",
@@ -13,7 +13,7 @@ export const donationCenters = [
   {
     id: "cra-hydra",
     nameAr: "مركز حيدرة",
-    nameFr: "CRA Hydra",
+    nameFr: "FADS Hydra",
     lat: 36.742,
     lng: 3.028,
     phone: "+21321987654",
@@ -22,7 +22,7 @@ export const donationCenters = [
   {
     id: "cra-bab-ezzouar",
     nameAr: "مركز باب الزوار",
-    nameFr: "CRA Bab Ezzouar",
+    nameFr: "FADS Bab Ezzouar",
     lat: 36.72,
     lng: 3.182,
     phone: "+21323456789",
@@ -31,7 +31,7 @@ export const donationCenters = [
   {
     id: "cra-blida",
     nameAr: "مركز البليدة",
-    nameFr: "CRA Blida",
+    nameFr: "FADS Blida",
     lat: 36.47,
     lng: 2.83,
     phone: "+21325551234",
@@ -88,7 +88,7 @@ export const mobileDrives = [
   },
 ];
 
-/** Hospital emergency pins — coordinates for map only */
+/** Hospital emergency pins — WGS84 at real hospital sites (see hospitalCoordinates.js) */
 export const emergencyAlerts = [
   {
     id: "SOS-MAP-001",
@@ -98,20 +98,20 @@ export const emergencyAlerts = [
     hospitalFr: "CHU Mustapha Pacha",
     wilaya: "Alger",
     urgency: "critical",
-    lat: 36.764,
-    lng: 3.052,
+    lat: 36.7622,
+    lng: 3.0534,
     postedAt: "2026-05-20T08:15:00",
   },
   {
     id: "SOS-MAP-002",
     sosId: "SOS-002",
     bloodType: "AB-",
-    hospitalAr: "مستشفى باب الوادي",
-    hospitalFr: "EHSU Bab El Oued",
+    hospitalAr: "مستشفى محمد لمين دباغين",
+    hospitalFr: "CHU Mohamed Lamine Debaghine",
     wilaya: "Alger",
     urgency: "critical",
-    lat: 36.788,
-    lng: 3.098,
+    lat: 36.7949,
+    lng: 3.0492,
     postedAt: "2026-05-20T09:30:00",
   },
 ];

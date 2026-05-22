@@ -1,7 +1,6 @@
 /**
  * Map team: change data HERE only. Do not import api/ or firebase/ in UI components.
  */
-import { api } from "../../../api/client.js";
 import { data } from "../../../services/data/index.js";
 import { wilayaStatus as mockWilayas, sosRequests as mockSos } from "../../../mockData.js";
 import {
@@ -10,69 +9,67 @@ import {
   emergencyAlerts,
 } from "../mock/mapData.js";
 import { sortByDistance } from "../utils/geo.js";
+import { mergeWilayaStatus } from "../data/mergeWilayaStatus.js";
+import { resolveHospitalCoords } from "../data/hospitalCoordinates.js";
+import { loadWorldCountriesGeo } from "../utils/geoCache.js";
+
+loadWorldCountriesGeo();
 
 export async function fetchWilayas() {
-  try {
-    return await data.getWilayas();
-  } catch {
-    return mockWilayas;
-  }
+  const payload = await fetchMapRegions();
+  return payload.wilayas;
 }
 
-function mockPayload(lat, lng) {
-  const emergencies =
-    emergencyAlerts.length > 0
-      ? emergencyAlerts
-      : mockSos.slice(0, 2).map((r, i) => ({
-          id: `SOS-MAP-${r.id}`,
-          sosId: r.id,
-          bloodType: r.bloodType,
-          hospitalAr: r.hospital,
-          hospitalFr: r.hospital,
-          wilaya: r.wilaya,
-          urgency: r.urgency,
-          lat: 36.764 + i * 0.02,
-          lng: 3.052 + i * 0.04,
-          postedAt: r.postedAt,
-        }));
-
-  const centers =
-    lat != null && lng != null
-      ? sortByDistance(donationCenters, lat, lng)
-      : donationCenters;
-
-  const drives =
-    lat != null && lng != null ? sortByDistance(mobileDrives, lat, lng) : mobileDrives;
-
-  const alerts =
-    lat != null && lng != null ? sortByDistance(emergencies, lat, lng) : emergencies;
-
-  return { centers, drives, emergencies: alerts, source: "mock" };
+/** All 69 DZ wilayas + neighboring country regions for low-zoom context */
+export async function fetchMapRegions() {
+  let apiList;
+  try {
+    apiList = await data.getWilayas();
+  } catch {
+    apiList = mockWilayas;
+  }
+  return {
+    wilayas: mergeWilayaStatus(apiList),
+  };
 }
 
 /**
  * Donor map payload — centers, drives, emergencies sorted by distance when lat/lng provided.
  */
 export async function fetchDonorMapData(lat, lng) {
-  try {
-    const q = new URLSearchParams();
-    if (lat != null) q.set("lat", String(lat));
-    if (lng != null) q.set("lng", String(lng));
-    const payload = await api.getDonorMap(q.toString() ? `?${q}` : "");
-    const centers = (payload.centers ?? []).filter((c) => c.lat != null && c.lng != null);
-    const drives = (payload.drives ?? []).filter((d) => d.lat != null && d.lng != null);
-    const emergencies = (payload.emergencies ?? []).filter(
-      (e) => e.lat != null && e.lng != null
-    );
+  const emergencies =
+    emergencyAlerts.length > 0
+      ? emergencyAlerts
+      : mockSos.slice(0, 2).map((r) => {
+          const coords = resolveHospitalCoords(r.id, r.hospital);
+          const fallback = { lat: 36.7538, lng: 3.0588 };
+          return {
+            id: `SOS-MAP-${r.id}`,
+            sosId: r.id,
+            bloodType: r.bloodType,
+            hospitalAr: coords?.nameAr ?? r.hospital,
+            hospitalFr: coords?.nameFr ?? r.hospital,
+            wilaya: r.wilaya,
+            urgency: r.urgency,
+            lat: coords?.lat ?? fallback.lat,
+            lng: coords?.lng ?? fallback.lng,
+            postedAt: r.postedAt,
+          };
+        });
 
-    if (centers.length > 0 || drives.length > 0 || emergencies.length > 0) {
-      return { centers, drives, emergencies, source: "api" };
-    }
-  } catch {
-    /* fall through to mock */
-  }
+  const centers = lat != null && lng != null
+    ? sortByDistance(donationCenters, lat, lng)
+    : donationCenters;
 
-  return mockPayload(lat, lng);
+  const drives = lat != null && lng != null
+    ? sortByDistance(mobileDrives, lat, lng)
+    : mobileDrives;
+
+  const alerts = lat != null && lng != null
+    ? sortByDistance(emergencies, lat, lng)
+    : emergencies;
+
+  return { centers, drives, emergencies: alerts };
 }
 
 export function getQrHighlightDrive(drives, lat, lng) {

@@ -11,6 +11,7 @@ export default function ControlHospitalSidebar({
   hospital,
   recommendations,
   onClose,
+  onFlyTo,
   onTransferRequest,
   transferPending,
 }) {
@@ -96,15 +97,24 @@ export default function ControlHospitalSidebar({
           </section>
         )}
 
-        <button
-          type="button"
-          disabled={transferPending}
-          onClick={() => onTransferRequest?.(hospital)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-700 py-2.5 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-50"
-        >
-          <Send className="h-4 w-4" />
-          {transferPending ? "Sending…" : "Send Transfer Request"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onFlyTo?.(hospital.coordinates)}
+            className="flex-1 rounded-lg border border-[#475569] py-2.5 text-xs font-semibold text-slate-200 hover:bg-[#1a2332]"
+          >
+            Center on map
+          </button>
+          <button
+            type="button"
+            disabled={transferPending}
+            onClick={() => onTransferRequest?.(hospital)}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-700 py-2.5 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50"
+          >
+            <Send className="h-4 w-4" />
+            {transferPending ? "Sending…" : "Transfer"}
+          </button>
+        </div>
       </div>
     </div>
   );

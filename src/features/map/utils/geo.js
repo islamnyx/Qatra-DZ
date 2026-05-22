@@ -37,7 +37,15 @@ export function sortByDistance(items, lat, lng, getCoords = (x) => x) {
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
-export function navigationUrl(lat, lng, label) {
-  const q = encodeURIComponent(label ?? "CRA");
-  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${q}`;
+export function navigationUrl(lat, lng, label, originLat, originLng) {
+  const params = new URLSearchParams({
+    api: "1",
+    destination: `${lat},${lng}`,
+    travelmode: "driving",
+  });
+  if (originLat != null && originLng != null) {
+    params.set("origin", `${originLat},${originLng}`);
+  }
+  const q = encodeURIComponent(label ?? "FADS");
+  return `https://www.google.com/maps/dir/?${params.toString()}&destination_place_id=${q}`;
 }
